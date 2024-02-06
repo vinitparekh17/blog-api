@@ -1,5 +1,6 @@
 MAIN_PACKAGE_PATH := ./cmd/api/
 BINARY_NAME := blog_api
+POSTGRES_URL := ${POSTGRES_URL}
 
 # ==================================================================================== #
 # HELPERS
@@ -75,6 +76,26 @@ run/live:
         --build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" \
         --misc.clean_on_exit "true"
 
+# ==================================================================================== #
+# DATABASE
+# ==================================================================================== #
+## database: start/stop the database
+.PHONY: database
+db-start:
+	docker start blog-db 
+db-stop:
+	docker stop blog-db
+
+
+# ==================================================================================== #
+# Migration
+# ==================================================================================== #
+## migrate: run migrations
+.PHONY: migrate
+migrate-up:
+	migrate -path ./migrations -database ${POSTGRES_URL} up
+migrate-down:
+	migrate -path ./migrations -database ${POSTGRES_URL} down
 
 # ==================================================================================== #
 # OPERATIONS
