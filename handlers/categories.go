@@ -6,15 +6,12 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jay-bhogayata/blogapi/database"
 	"github.com/jay-bhogayata/blogapi/logger"
 )
 
 func (h *Handlers) GetAllCategories(w http.ResponseWriter, r *http.Request) {
 
-	query := database.New(h.DB)
-
-	cate, err := query.GetAllCategories(r.Context())
+	cate, err := h.query.GetAllCategories(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logger.Log.Error(err.Error())
@@ -48,9 +45,7 @@ func (h *Handlers) GetCategoryById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := database.New(h.DB)
-
-	cate, err := query.GetCategoryById(r.Context(), int32(id))
+	cate, err := h.query.GetCategoryById(r.Context(), int32(id))
 	if err != nil {
 		if err.Error() == "no rows in result set" {
 

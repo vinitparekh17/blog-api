@@ -6,16 +6,19 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jay-bhogayata/blogapi/database"
 	"github.com/jay-bhogayata/blogapi/logger"
 )
 
 type Handlers struct {
-	DB *pgxpool.Pool
+	DB    *pgxpool.Pool
+	query *database.Queries
 }
 
-func NewHandlers(db *pgxpool.Pool) *Handlers {
+func NewHandlers(db *pgxpool.Pool, query *database.Queries) *Handlers {
 	return &Handlers{
-		DB: db,
+		DB:    db,
+		query: query,
 	}
 }
 

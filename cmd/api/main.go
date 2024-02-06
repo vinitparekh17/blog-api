@@ -26,7 +26,9 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	handlers := handlers.NewHandlers(db)
+	query := database.New(db)
+
+	handlers := handlers.NewHandlers(db, query)
 
 	router := router.NewRouter(handlers)
 
