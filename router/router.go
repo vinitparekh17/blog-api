@@ -14,6 +14,11 @@ func NewRouter(h *handlers.Handlers) *chi.Mux {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", h.CheckHealth)
+
+		r.Route("/catagories", func(r chi.Router) {
+			r.Get("/", h.GetAllCategories)
+			r.Get("/{id}", h.GetCategoryById)
+		})
 	})
 
 	return r
