@@ -119,3 +119,16 @@ push: tidy audit no-dirty
 production/deploy: confirm tidy audit no-dirty
 	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${BINARY_NAME} ${MAIN_PACKAGE_PATH}
 	upx -5 /tmp/bin/linux_amd64/${BINARY_NAME}
+
+
+# ==================================================================================== #
+# CLEANUP
+# ==================================================================================== #
+## clean: remove temporary files
+.PHONY: clean
+clean:
+	rm -rf /tmp/bin
+	rm -rf /tmp/coverage.out
+	rm -rf /tmp/sqlc
+	rm -rf /tmp/go-build*
+
