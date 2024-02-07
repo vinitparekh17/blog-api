@@ -17,7 +17,7 @@ func NewRouter(h *handlers.Handlers) *chi.Mux {
 
 		r.Route("/catagories", func(r chi.Router) {
 			r.Get("/", h.GetAllCategories)
-			r.Get("/{id}", h.GetCategoryById)
+			r.Get("/{id}", h.GetCategoryByID)
 		})
 	})
 

@@ -14,14 +14,14 @@ func (h *Handlers) GetAllCategories(w http.ResponseWriter, r *http.Request) {
 	cate, err := h.query.GetAllCategories(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logger.Log.Error(err.Error())
+		h.logger.Error(err.Error())
 		return
 	}
 
 	res, err := json.Marshal(cate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logger.Log.Error(err.Error())
+		h.logger.Error(err.Error())
 		return
 	}
 
@@ -35,7 +35,7 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-func (h *Handlers) GetCategoryById(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) GetCategoryByID(w http.ResponseWriter, r *http.Request) {
 
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
