@@ -1,24 +1,29 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jay-bhogayata/blogapi/database"
-	"github.com/jay-bhogayata/blogapi/logger"
 )
 
-type Handlers struct {
-	DB    *pgxpool.Pool
-	query *database.Queries
+type DB interface {
+	Ping(context.Context) error
 }
 
-func NewHandlers(db *pgxpool.Pool, query *database.Queries) *Handlers {
+type Handlers struct {
+	DB     DB
+	query  *database.Queries
+	logger *slog.Logger
+}
+
+func NewHandlers(db DB, query *database.Queries, logger *slog.Logger) *Handlers {
 	return &Handlers{
-		DB:    db,
-		query: query,
+		DB:     db,
+		query:  query,
+		logger: logger,
 	}
 }
 
@@ -30,7 +35,7 @@ func (h *Handlers) CheckHealth(w http.ResponseWriter, r *http.Request) {
 
 	err := h.DB.Ping(r.Context())
 	if err != nil {
-		logger.Log.Error("error while pining the db", err)
+		h.logger.Error("error while pining the db", err)
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
@@ -41,7 +46,7 @@ func (h *Handlers) CheckHealth(w http.ResponseWriter, r *http.Request) {
 
 	res, err := json.Marshal(hr)
 	if err != nil {
-		slog.Error("error marshalling health response: ", "error", err)
+		h.logger.Error("error marshalling health response: ", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

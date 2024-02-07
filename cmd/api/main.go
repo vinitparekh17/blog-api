@@ -28,7 +28,7 @@ func main() {
 
 	query := database.New(db)
 
-	handlers := handlers.NewHandlers(db, query)
+	handlers := handlers.NewHandlers(db, query, logger.Log)
 
 	router := router.NewRouter(handlers)
 
