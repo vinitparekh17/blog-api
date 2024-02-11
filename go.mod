@@ -5,6 +5,7 @@ go 1.21.5
 require (
 	github.com/jackc/pgx/v5 v5.5.3
 	github.com/joho/godotenv v1.5.1
+	github.com/lmittmann/tint v1.0.4
 )
 
 require (

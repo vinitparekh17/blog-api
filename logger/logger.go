@@ -3,20 +3,30 @@ package logger
 import (
 	"log/slog"
 	"os"
+
+	"github.com/lmittmann/tint"
 )
 
 var Log *slog.Logger
 
 func Init() {
 
-	opts := &slog.HandlerOptions{
-		AddSource: true,
+	env := os.Getenv("ENV")
+
+	if env == "DEV" {
+
+		Log = slog.New(tint.NewHandler(os.Stdout, nil))
+
+	} else {
+
+		opts := &slog.HandlerOptions{
+			AddSource: true,
+		}
+
+		logHandler := slog.NewTextHandler(os.Stdout, opts)
+
+		Log = slog.New(logHandler)
 	}
-
-	logHandler := slog.NewTextHandler(os.Stdout, opts)
-
-	Log = slog.New(logHandler)
-
 	slog.SetDefault(Log)
 
 }
