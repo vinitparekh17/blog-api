@@ -17,8 +17,9 @@ func main() {
 	logger.Init()
 
 	cfg, err := config.LoadConfig()
+
 	if err != nil {
-		log.Fatalf(err.Error())
+		logger.Log.Info("error in loading the config")
 	}
 
 	db, err := database.Init(context.Background(), cfg.Database.DBURL)

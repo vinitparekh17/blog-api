@@ -1,4 +1,4 @@
-MAIN_PACKAGE_PATH := ./cmd/api/
+MAIN_PACKAGE_PATH := ./cmd/api/blog/
 BINARY_NAME := blog_api
 POSTGRES_URL := ${POSTGRES_URL}
 
