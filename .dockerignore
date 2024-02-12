@@ -1,0 +1,10 @@
+tmp
+.env
+blog
+*.log
+*.log.*
+*.out
+.gitignore
+makefile
+query.sql
+sqlc.sql

@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  blog-api:
+    image: blog-api:latest
+    container_name: blog-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./.env.sample:/app/.env
+    restart: always
+    depends_on:
+      - postgres
+  
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pg123
+      POSTGRES_DB: blog
+    volumes:
+      - compose-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+
+volumes:
+  compose-postgres-data: 
+
+
+# docker run -dp 5432:5432 -v blog-db-data:/var/lib/postgresql/data --name blog-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=pg123 -e POSTGRES_DB=blog postgres:15-alpine

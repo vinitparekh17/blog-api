@@ -16,6 +16,7 @@ type Config struct {
 	Database struct {
 		DBURL string
 	}
+	Env string
 }
 
 func LoadConfig() (*Config, error) {
@@ -41,8 +42,15 @@ func LoadConfig() (*Config, error) {
 
 	cfg.Database.DBURL = os.Getenv("DATABASE_URL")
 	if cfg.Database.DBURL == "" {
-		logger.Log.Error("no SERVER_PORT env variable provided defaulting to port 8080")
+		logger.Log.Error("no DATABASE_URL found in env file")
 		return nil, errors.New("DATABASE_URL env not found")
 	}
+
+	cfg.Env = os.Getenv("ENV")
+	if cfg.Env == "" {
+		logger.Log.Error("no ENV env variable provided defaulting to dev")
+		cfg.Env = "DEV"
+	}
+
 	return &cfg, nil
 }

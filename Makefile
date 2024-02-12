@@ -1,5 +1,6 @@
-MAIN_PACKAGE_PATH := ./cmd/api/
+MAIN_PACKAGE_PATH := ./cmd/api/blog/
 BINARY_NAME := blog_api
+POSTGRES_URL := ${POSTGRES_URL}
 
 # ==================================================================================== #
 # HELPERS
@@ -75,6 +76,34 @@ run/live:
         --build.include_ext "go, tpl, tmpl, html, css, scss, js, ts, sql, jpeg, jpg, gif, png, bmp, svg, webp, ico" \
         --misc.clean_on_exit "true"
 
+# ==================================================================================== #
+# DATABASE
+# ==================================================================================== #
+## database: start/stop the database
+.PHONY: database
+db-start:
+	docker start blog-db 
+db-stop:
+	docker stop blog-db
+
+
+# ==================================================================================== #
+# Migration
+# ==================================================================================== #
+## migrate: run migrations
+.PHONY: migrate
+migrate-up:
+	migrate -path ./migrations -database ${POSTGRES_URL} up
+migrate-down:
+	migrate -path ./migrations -database ${POSTGRES_URL} down
+
+# ==================================================================================== #
+# sqlc
+# ==================================================================================== #
+## sqlc generate: generate go code from sql using sqlc 
+.PHONY: sqlc/generate
+sqlc/generate:
+	sqlc generate
 
 # ==================================================================================== #
 # OPERATIONS
@@ -90,3 +119,16 @@ push: tidy audit no-dirty
 production/deploy: confirm tidy audit no-dirty
 	GOOS=linux GOARCH=amd64 go build -ldflags='-s' -o=/tmp/bin/linux_amd64/${BINARY_NAME} ${MAIN_PACKAGE_PATH}
 	upx -5 /tmp/bin/linux_amd64/${BINARY_NAME}
+
+
+# ==================================================================================== #
+# CLEANUP
+# ==================================================================================== #
+## clean: remove temporary files
+.PHONY: clean
+clean:
+	rm -rf /tmp/bin
+	rm -rf /tmp/coverage.out
+	rm -rf /tmp/sqlc
+	rm -rf /tmp/go-build*
+
