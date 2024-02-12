@@ -42,7 +42,7 @@ func LoadConfig() (*Config, error) {
 
 	cfg.Database.DBURL = os.Getenv("DATABASE_URL")
 	if cfg.Database.DBURL == "" {
-		logger.Log.Error("no SERVER_PORT env variable provided defaulting to port 8080")
+		logger.Log.Error("no DATABASE_URL found in env file")
 		return nil, errors.New("DATABASE_URL env not found")
 	}
 
