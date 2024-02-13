@@ -4,9 +4,22 @@
 
 package database
 
-import ()
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type Category struct {
 	ID   int32  `json:"id"`
 	Name string `json:"name"`
+}
+
+type User struct {
+	UserID            int32            `json:"user_id"`
+	Username          string           `json:"username"`
+	Email             string           `json:"email"`
+	PasswordHash      string           `json:"password_hash"`
+	CreatedAt         pgtype.Timestamp `json:"created_at"`
+	UpdatedAt         pgtype.Timestamp `json:"updated_at"`
+	IsVerified        pgtype.Bool      `json:"is_verified"`
+	VerificationToken pgtype.Text      `json:"verification_token"`
 }
