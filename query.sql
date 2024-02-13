@@ -33,3 +33,6 @@ UPDATE users SET username = $1, email = $2, password_hash = $3, is_verified = $4
 
 -- name: DeleteUser :exec
 DELETE FROM users WHERE user_id = $1;
+
+-- name: VerifyUser :exec
+UPDATE users SET is_verified = true, verification_token = null , updated_at = now() WHERE verification_token = $1  RETURNING *;

@@ -14,7 +14,7 @@ type Category struct {
 }
 
 type User struct {
-	UserID            int32            `json:"user_id"`
+	UserID            pgtype.UUID      `json:"user_id"`
 	Username          string           `json:"username"`
 	Email             string           `json:"email"`
 	PasswordHash      string           `json:"password_hash"`

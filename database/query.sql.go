@@ -69,7 +69,7 @@ const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users WHERE user_id = $1
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, userID int32) error {
+func (q *Queries) DeleteUser(ctx context.Context, userID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteUser, userID)
 	return err
 }
@@ -166,7 +166,7 @@ const getUserById = `-- name: GetUserById :one
 SELECT user_id, username, email, password_hash, created_at, updated_at, is_verified, verification_token FROM users WHERE user_id = $1
 `
 
-func (q *Queries) GetUserById(ctx context.Context, userID int32) (User, error) {
+func (q *Queries) GetUserById(ctx context.Context, userID pgtype.UUID) (User, error) {
 	row := q.db.QueryRow(ctx, getUserById, userID)
 	var i User
 	err := row.Scan(
@@ -228,7 +228,7 @@ type UpdateUserParams struct {
 	PasswordHash      string      `json:"password_hash"`
 	IsVerified        pgtype.Bool `json:"is_verified"`
 	VerificationToken pgtype.Text `json:"verification_token"`
-	UserID            int32       `json:"user_id"`
+	UserID            pgtype.UUID `json:"user_id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
@@ -252,4 +252,13 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.VerificationToken,
 	)
 	return i, err
+}
+
+const verifyUser = `-- name: VerifyUser :exec
+UPDATE users SET is_verified = true, verification_token = null , updated_at = now() WHERE verification_token = $1  RETURNING user_id, username, email, password_hash, created_at, updated_at, is_verified, verification_token
+`
+
+func (q *Queries) VerifyUser(ctx context.Context, verificationToken pgtype.Text) error {
+	_, err := q.db.Exec(ctx, verifyUser, verificationToken)
+	return err
 }

@@ -22,6 +22,12 @@ func NewRouter(h *handlers.Handlers) *chi.Mux {
 			r.Put("/", h.UpdateCategory)
 			r.Delete("/{id}", h.DeleteCategory)
 		})
+
+		r.Route("/accounts", func(r chi.Router) {
+			r.Post("/register", h.RegisterUser)
+			r.Get("/verify", h.VerifyUser)
+		})
+
 	})
 
 	return r
