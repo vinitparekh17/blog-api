@@ -18,6 +18,7 @@ type Config struct {
 	}
 	Env         string
 	EmailSender string
+	JWTSecret   string
 }
 
 func LoadConfig() (*Config, error) {
@@ -57,6 +58,12 @@ func LoadConfig() (*Config, error) {
 	if cfg.EmailSender == "" {
 		logger.Log.Error("no MAILER_SENDER env variable provided")
 		return nil, errors.New("MAILER_SENDER env not found")
+	}
+
+	cfg.JWTSecret = os.Getenv("JWT_SECRET")
+	if cfg.JWTSecret == "" {
+		logger.Log.Error("no JWT_SECRET env variable provided")
+		return nil, errors.New("JWT_SECRET env not found")
 	}
 
 	return &cfg, nil

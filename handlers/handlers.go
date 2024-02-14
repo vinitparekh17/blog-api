@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/jay-bhogayata/blogapi/config"
 	"github.com/jay-bhogayata/blogapi/database"
 )
 
@@ -17,13 +18,15 @@ type Handlers struct {
 	DB     DB
 	query  *database.Queries
 	logger *slog.Logger
+	config *config.Config
 }
 
-func NewHandlers(db DB, query *database.Queries, logger *slog.Logger) *Handlers {
+func NewHandlers(config *config.Config, db DB, query *database.Queries, logger *slog.Logger) *Handlers {
 	return &Handlers{
 		DB:     db,
 		query:  query,
 		logger: logger,
+		config: config,
 	}
 }
 

@@ -4,15 +4,16 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 
+	"github.com/jay-bhogayata/blogapi/config"
 	"github.com/jay-bhogayata/blogapi/handlers"
 	"github.com/jay-bhogayata/blogapi/middleware"
 )
 
 var tokenAuth *jwtauth.JWTAuth
 
-func NewRouter(h *handlers.Handlers) *chi.Mux {
+func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 
-	tokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
+	tokenAuth = jwtauth.New("HS256", []byte(cfg.JWTSecret), nil)
 
 	r := chi.NewRouter()
 
