@@ -144,7 +144,7 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 		"username": usr.Username,
 		"expiry":   time.Now().Add(time.Hour * 24).Unix(),
 	})
-	tokenString, err := token.SignedString([]byte("secret"))
+	tokenString, err := token.SignedString([]byte(h.config.JWTSecret))
 	if err != nil {
 		fmt.Println("err", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")

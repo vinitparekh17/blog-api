@@ -32,7 +32,7 @@ func TestCheckHealth(t *testing.T) {
 	query := &database.Queries{}
 	logger := slog.Default()
 
-	h := handlers.NewHandlers(db, query, logger)
+	h := handlers.NewHandlers(nil, db, query, logger)
 
 	req, err := http.NewRequest("GET", "/health", nil)
 	if err != nil {
@@ -58,7 +58,7 @@ func TestCheckHealth_Error(t *testing.T) {
 	query := &database.Queries{}
 	logger := slog.Default()
 
-	h := handlers.NewHandlers(db, query, logger)
+	h := handlers.NewHandlers(nil, db, query, logger)
 
 	req, err := http.NewRequest("GET", "/health", nil)
 	if err != nil {

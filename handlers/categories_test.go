@@ -14,7 +14,7 @@ func TestParseID(t *testing.T) {
 	query := &database.Queries{}
 	logger := slog.Default()
 
-	h := handlers.NewHandlers(db, query, logger)
+	h := handlers.NewHandlers(nil, db, query, logger)
 
 	tests := []struct {
 		name    string
