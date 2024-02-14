@@ -5,30 +5,50 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/alexedwards/argon2id"
+	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jay-bhogayata/blogapi/database"
 	"github.com/jay-bhogayata/blogapi/mailer"
-	"golang.org/x/crypto/bcrypt"
 )
 
+type User struct {
+	UserName string      `json:"username"`
+	UserID   pgtype.UUID `json:"user_id"`
+	Email    string      `json:"email"`
+}
+
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	u := database.CreateUserParams{}
+	type requestUser struct {
+		Username          string      `json:"username"`
+		Email             string      `json:"email"`
+		PasswordHash      string      `json:"password"`
+		IsVerified        pgtype.Bool `json:"is_verified"`
+		VerificationToken pgtype.Text `json:"verification_token"`
+	}
+	u := requestUser{}
 	err := json.NewDecoder(r.Body).Decode(&u)
 	if err != nil {
 		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	hashedPassword, err := h.HashPassword(u.PasswordHash)
+	hash, err := argon2id.CreateHash(u.PasswordHash, argon2id.DefaultParams)
 	if err != nil {
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	token, _ := h.GenerateToken()
+	token, err := h.GenerateToken()
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
 
-	user, err := h.query.CreateUser(r.Context(), database.CreateUserParams{Username: u.Username, Email: u.Email, PasswordHash: hashedPassword, IsVerified: pgtype.Bool{Bool: false, Valid: true}, VerificationToken: pgtype.Text{String: token, Valid: true}})
+	usr, err := h.query.CreateUser(r.Context(), database.CreateUserParams{Username: u.Username, Email: u.Email, PasswordHash: hash, IsVerified: pgtype.Bool{Bool: false, Valid: true}, VerificationToken: pgtype.Text{String: token, Valid: true}})
 	if err != nil {
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
@@ -50,27 +70,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	h.respondWithJSON(w, http.StatusCreated, user)
-}
-
-func (h *Handlers) HashPassword(password string) (hashOfPassword string, err error) {
-
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	if err != nil {
-		h.logger.Error("error hashing password", "error", err)
-		return "", err
-	}
-
-	return string(bytes), err
-
-}
-
-func (h *Handlers) MatchPassword(password string, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	if err != nil {
-		return false
-	}
-	return err == nil
+	h.respondWithJSON(w, http.StatusCreated, fmt.Sprintf("User created with id: %v", usr.UserID))
 }
 
 func (h *Handlers) GenerateToken() (token string, err error) {
@@ -105,4 +105,87 @@ func (h *Handlers) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(`<html><body><h1>Account Verified</h1></body></html>`))
+}
+
+func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
+
+	type user struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	u := user{}
+
+	err := json.NewDecoder(r.Body).Decode(&u)
+	if err != nil {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	usr, err := h.query.GetUserByEmail(r.Context(), u.Email)
+	if err != nil {
+		fmt.Println("err", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	match, err := argon2id.ComparePasswordAndHash(u.Password, usr.PasswordHash)
+	if err != nil {
+		fmt.Println("err", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+	if !match {
+		h.respondWithError(w, http.StatusUnauthorized, "Invalid email or password")
+		return
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email":    usr.Email,
+		"username": usr.Username,
+		"expiry":   time.Now().Add(time.Hour * 24).Unix(),
+	})
+	tokenString, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		fmt.Println("err", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    tokenString,
+		Path:     "/",
+		HttpOnly: true,
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	h.respondWithJSON(w, http.StatusOK, "Logged in successfully")
+}
+
+func (h *Handlers) LogoutUser(w http.ResponseWriter, r *http.Request) {
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Unix(0, 0),
+	})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	h.respondWithJSON(w, http.StatusOK, "Logged out successfully")
+}
+
+func (h *Handlers) GetUserInfoByUserEmail(w http.ResponseWriter, r *http.Request) {
+	mail := chi.URLParam(r, "mail")
+
+	usr, err := h.query.GetUserByEmail(r.Context(), mail)
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	user := User{UserName: usr.Username, UserID: usr.UserID, Email: usr.Email}
+
+	h.respondWithJSON(w, http.StatusOK, user)
 }
