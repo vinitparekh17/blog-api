@@ -16,7 +16,8 @@ type Config struct {
 	Database struct {
 		DBURL string
 	}
-	Env string
+	Env         string
+	EmailSender string
 }
 
 func LoadConfig() (*Config, error) {
@@ -50,6 +51,12 @@ func LoadConfig() (*Config, error) {
 	if cfg.Env == "" {
 		logger.Log.Error("no ENV env variable provided defaulting to dev")
 		cfg.Env = "DEV"
+	}
+
+	cfg.EmailSender = os.Getenv("MAILER_SENDER")
+	if cfg.EmailSender == "" {
+		logger.Log.Error("no MAILER_SENDER env variable provided")
+		return nil, errors.New("MAILER_SENDER env not found")
 	}
 
 	return &cfg, nil
