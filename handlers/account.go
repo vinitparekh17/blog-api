@@ -189,3 +189,23 @@ func (h *Handlers) GetUserInfoByUserEmail(w http.ResponseWriter, r *http.Request
 
 	h.respondWithJSON(w, http.StatusOK, user)
 }
+
+func (h *Handlers) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+
+	user, err := h.query.GetAllUsers(r.Context())
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	res, err := json.Marshal(user)
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
+
+}

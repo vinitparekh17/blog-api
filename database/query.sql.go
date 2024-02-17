@@ -99,27 +99,30 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT user_id, username, email, password_hash, created_at, updated_at, is_verified, verification_token FROM users
+SELECT user_id,username,email,is_verified FROM users
 `
 
-func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
+type GetAllUsersRow struct {
+	UserID     pgtype.UUID `json:"user_id"`
+	Username   string      `json:"username"`
+	Email      string      `json:"email"`
+	IsVerified pgtype.Bool `json:"is_verified"`
+}
+
+func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
 	rows, err := q.db.Query(ctx, getAllUsers)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []GetAllUsersRow
 	for rows.Next() {
-		var i User
+		var i GetAllUsersRow
 		if err := rows.Scan(
 			&i.UserID,
 			&i.Username,
 			&i.Email,
-			&i.PasswordHash,
-			&i.CreatedAt,
-			&i.UpdatedAt,
 			&i.IsVerified,
-			&i.VerificationToken,
 		); err != nil {
 			return nil, err
 		}

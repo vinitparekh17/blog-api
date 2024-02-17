@@ -26,7 +26,7 @@ SELECT * FROM users WHERE verification_token = $1;
 SELECT * FROM users WHERE email = $1;
 
 -- name: GetAllUsers :many
-SELECT * FROM users;
+SELECT user_id,username,email,is_verified FROM users;
 
 -- name: UpdateUser :one
 UPDATE users SET username = $1, email = $2, password_hash = $3, is_verified = $4, verification_token = $5 WHERE user_id = $6 RETURNING *;
