@@ -21,6 +21,10 @@ type User struct {
 	Email    string      `json:"email"`
 }
 
+type Response struct {
+	Message string `json:"message"`
+}
+
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	type requestUser struct {
 		Username          string      `json:"username"`
@@ -68,9 +72,10 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	h.respondWithJSON(w, http.StatusCreated, fmt.Sprintf("User created with id: %v", usr.UserID))
+	msg := fmt.Sprintf("Account created successfully. Verification link has been sent to %s", usr.Email)
+	res := Response{Message: msg}
+
+	h.respondWithJSON(w, http.StatusCreated, res)
 }
 
 func (h *Handlers) GenerateToken() (token string, err error) {
@@ -140,6 +145,7 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":  usr.UserID,
 		"email":    usr.Email,
 		"username": usr.Username,
 		"expiry":   time.Now().Add(time.Hour * 24).Unix(),
@@ -157,9 +163,8 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 	})
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	h.respondWithJSON(w, http.StatusOK, "Logged in successfully")
+
+	h.respondWithJSON(w, http.StatusOK, &Response{Message: "Logged in successfully"})
 }
 
 func (h *Handlers) LogoutUser(w http.ResponseWriter, r *http.Request) {
@@ -171,9 +176,8 @@ func (h *Handlers) LogoutUser(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Expires:  time.Unix(0, 0),
 	})
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	h.respondWithJSON(w, http.StatusOK, "Logged out successfully")
+
+	h.respondWithJSON(w, http.StatusOK, &Response{Message: "Logged out successfully"})
 }
 
 func (h *Handlers) GetUserInfoByUserEmail(w http.ResponseWriter, r *http.Request) {
@@ -188,4 +192,22 @@ func (h *Handlers) GetUserInfoByUserEmail(w http.ResponseWriter, r *http.Request
 	user := User{UserName: usr.Username, UserID: usr.UserID, Email: usr.Email}
 
 	h.respondWithJSON(w, http.StatusOK, user)
+}
+
+func (h *Handlers) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+
+	user, err := h.query.GetAllUsers(r.Context())
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	res, err := json.Marshal(user)
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(res)
 }

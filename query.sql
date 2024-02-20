@@ -26,7 +26,7 @@ SELECT * FROM users WHERE verification_token = $1;
 SELECT * FROM users WHERE email = $1;
 
 -- name: GetAllUsers :many
-SELECT * FROM users;
+SELECT user_id,username,email,is_verified FROM users;
 
 -- name: UpdateUser :one
 UPDATE users SET username = $1, email = $2, password_hash = $3, is_verified = $4, verification_token = $5 WHERE user_id = $6 RETURNING *;
@@ -36,3 +36,19 @@ DELETE FROM users WHERE user_id = $1;
 
 -- name: VerifyUser :exec
 UPDATE users SET is_verified = true, verification_token = null , updated_at = now() WHERE verification_token = $1  RETURNING *;
+
+
+-- name: CreateArticle :one
+INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id;
+
+-- name: PublishArticle :exec
+UPDATE articles SET is_published = true, updated_at = now() WHERE article_id = $1;
+
+-- name: GetAllArticles :many
+SELECT * FROM articles where is_published = true;
+
+-- name: GetAllArticleByUser :many
+SELECT * FROM articles WHERE user_id = $1;
+
+-- name: GetUserIdByArticleId :one
+SELECT user_id FROM articles WHERE article_id = $1;
