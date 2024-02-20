@@ -37,17 +37,15 @@ func (h *Handlers) CreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := database.Article{
-		ArticleID:   res.ArticleID,
-		Title:       res.Title,
-		Content:     res.Content,
-		UserID:      res.UserID,
-		CategoryID:  res.CategoryID,
-		CreatedAt:   res.CreatedAt,
-		UpdatedAt:   res.UpdatedAt,
-		IsPublished: res.IsPublished}
+	type response struct {
+		Message   string      `json:"message"`
+		ArticleID pgtype.UUID `json:"article_id"`
+	}
 
-	h.respondWithJSON(w, http.StatusCreated, response)
+	h.respondWithJSON(w, http.StatusCreated, response{
+		Message:   "Article created successfully",
+		ArticleID: res,
+	})
 }
 
 func (h *Handlers) extractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
@@ -70,7 +68,6 @@ func (h *Handlers) extractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
 	if !ok {
 		return pgtype.UUID{}, errors.New("invalid JWT claims")
 	}
-	fmt.Println("claims: ", claims)
 
 	userID, ok := claims["user_id"].(string)
 	if !ok {

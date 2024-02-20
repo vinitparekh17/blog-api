@@ -12,7 +12,7 @@ import (
 )
 
 const createArticle = `-- name: CreateArticle :one
-INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id, title, content, user_id, category_id, created_at, updated_at, is_published
+INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id
 `
 
 type CreateArticleParams struct {
@@ -22,25 +22,16 @@ type CreateArticleParams struct {
 	UserID     pgtype.UUID `json:"user_id"`
 }
 
-func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (Article, error) {
+func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, createArticle,
 		arg.Title,
 		arg.Content,
 		arg.CategoryID,
 		arg.UserID,
 	)
-	var i Article
-	err := row.Scan(
-		&i.ArticleID,
-		&i.Title,
-		&i.Content,
-		&i.UserID,
-		&i.CategoryID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.IsPublished,
-	)
-	return i, err
+	var article_id pgtype.UUID
+	err := row.Scan(&article_id)
+	return article_id, err
 }
 
 const createCategory = `-- name: CreateCategory :one

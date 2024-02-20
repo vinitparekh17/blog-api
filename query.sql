@@ -39,4 +39,4 @@ UPDATE users SET is_verified = true, verification_token = null , updated_at = no
 
 
 -- name: CreateArticle :one
-INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *;
+INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id;
