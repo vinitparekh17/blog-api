@@ -52,7 +52,10 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 
 			r.With(jwtauth.Verifier(tokenAuth), jwtauth.Authenticator(tokenAuth)).Group(func(r chi.Router) {
 
+				r.Get("/all", h.GetAllArticlesByUser)
+				r.Get("/", h.GetAllArticles)
 				r.Post("/", h.CreateArticle)
+				r.Post("/{id}", h.PublishArticle)
 
 			})
 		})

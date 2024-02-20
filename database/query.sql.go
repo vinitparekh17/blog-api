@@ -97,6 +97,72 @@ func (q *Queries) DeleteUser(ctx context.Context, userID pgtype.UUID) error {
 	return err
 }
 
+const getAllArticleByUser = `-- name: GetAllArticleByUser :many
+SELECT article_id, title, content, user_id, category_id, created_at, updated_at, is_published FROM articles WHERE user_id = $1
+`
+
+func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) ([]Article, error) {
+	rows, err := q.db.Query(ctx, getAllArticleByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Article
+	for rows.Next() {
+		var i Article
+		if err := rows.Scan(
+			&i.ArticleID,
+			&i.Title,
+			&i.Content,
+			&i.UserID,
+			&i.CategoryID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.IsPublished,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllArticles = `-- name: GetAllArticles :many
+SELECT article_id, title, content, user_id, category_id, created_at, updated_at, is_published FROM articles where is_published = true
+`
+
+func (q *Queries) GetAllArticles(ctx context.Context) ([]Article, error) {
+	rows, err := q.db.Query(ctx, getAllArticles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Article
+	for rows.Next() {
+		var i Article
+		if err := rows.Scan(
+			&i.ArticleID,
+			&i.Title,
+			&i.Content,
+			&i.UserID,
+			&i.CategoryID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.IsPublished,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllCategories = `-- name: GetAllCategories :many
 SELECT id, name FROM categories
 `
@@ -226,6 +292,26 @@ func (q *Queries) GetUserByVerificationToken(ctx context.Context, verificationTo
 		&i.VerificationToken,
 	)
 	return i, err
+}
+
+const getUserIdByArticleId = `-- name: GetUserIdByArticleId :one
+SELECT user_id FROM articles WHERE article_id = $1
+`
+
+func (q *Queries) GetUserIdByArticleId(ctx context.Context, articleID pgtype.UUID) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, getUserIdByArticleId, articleID)
+	var user_id pgtype.UUID
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
+const publishArticle = `-- name: PublishArticle :exec
+UPDATE articles SET is_published = true, updated_at = now() WHERE article_id = $1
+`
+
+func (q *Queries) PublishArticle(ctx context.Context, articleID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, publishArticle, articleID)
+	return err
 }
 
 const updateCategory = `-- name: UpdateCategory :one

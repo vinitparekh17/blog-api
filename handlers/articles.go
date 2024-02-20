@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -48,6 +49,77 @@ func (h *Handlers) CreateArticle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handlers) PublishArticle(w http.ResponseWriter, r *http.Request) {
+
+	articleID := chi.URLParam(r, "id")
+	if articleID == "" {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload article id is missing")
+		return
+	}
+
+	var articleId pgtype.UUID
+	if err := articleId.Scan(articleID); err != nil {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid article ID")
+		return
+	}
+
+	userId, err := h.query.GetUserIdByArticleId(r.Context(), articleId)
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, "error while getting user id")
+		return
+	}
+
+	userID, err := h.extractUserIDFromJWT(r)
+	if err != nil {
+		h.logger.Error("Error extracting user ID from JWT", err)
+		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if userId != userID {
+		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized for this article")
+		return
+	}
+
+	err = h.query.PublishArticle(r.Context(), articleId)
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, "error while publishing article")
+		return
+	}
+
+	h.respondWithJSON(w, http.StatusOK, &Response{Message: "Article published successfully"})
+
+}
+
+func (h *Handlers) GetAllArticles(w http.ResponseWriter, r *http.Request) {
+	articles, err := h.query.GetAllArticles(r.Context())
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	h.respondWithJSON(w, http.StatusOK, articles)
+}
+
+func (h *Handlers) GetAllArticlesByUser(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.extractUserIDFromJWT(r)
+	if err != nil {
+		h.logger.Error("Error extracting user ID from JWT", err)
+		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	articles, err := h.query.GetAllArticleByUser(r.Context(), userID)
+	if err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	h.respondWithJSON(w, http.StatusOK, articles)
+}
+
+// utils
+
 func (h *Handlers) extractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
 	cookie, err := r.Cookie("jwt")
 	if err != nil {
@@ -81,80 +153,3 @@ func (h *Handlers) extractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
 
 	return userIDUUID, nil
 }
-
-// package handlers
-
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"net/http"
-
-// 	"github.com/golang-jwt/jwt/v5"
-// 	"github.com/jackc/pgx/v5/pgtype"
-// 	"github.com/jay-bhogayata/blogapi/database"
-// )
-
-// func (h *Handlers) CreateArticle(w http.ResponseWriter, r *http.Request) {
-
-// 	article := database.CreateArticleParams{}
-
-// 	err := json.NewDecoder(r.Body).Decode(&article)
-// 	if err != nil {
-// 		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-// 		return
-// 	}
-
-// 	cookie, err := r.Cookie("jwt")
-// 	if err != nil {
-// 		h.logger.Error("Error while getting cookie", err)
-// 	}
-// 	id, err := extractUserIDFromJWT(cookie.Value, h.config.JWTSecret)
-// 	if err != nil {
-// 		h.logger.Error("Error while extracting user id from jwt", err)
-// 	}
-
-// 	var userid pgtype.UUID
-// 	userid.Scan(id)
-// 	article.UserID = userid
-
-// 	res, err := h.query.CreateArticle(r.Context(), article)
-// 	if err != nil {
-// 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
-// 		return
-// 	}
-
-// 	var re database.Article
-// 	re.ArticleID = res.ArticleID
-// 	re.Title = res.Title
-// 	re.Content = res.Content
-// 	re.UserID = res.UserID
-// 	re.CategoryID = res.CategoryID
-// 	re.CreatedAt = res.CreatedAt
-// 	re.IsPublished = res.IsPublished
-
-// 	h.respondWithJSON(w, http.StatusCreated, re)
-// }
-
-// func extractUserIDFromJWT(tokenString string, secret string) (string, error) {
-// 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-// 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-// 			return nil, fmt.Errorf("invalid signing method")
-// 		}
-// 		return []byte(secret), nil
-// 	})
-// 	if err != nil {
-// 		return "", fmt.Errorf("error parsing token: %w", err)
-// 	}
-
-// 	claims, ok := token.Claims.(jwt.MapClaims)
-// 	if !ok {
-// 		return "", fmt.Errorf("error getting claims: %w", err)
-// 	}
-
-// 	userID, ok := claims["user_id"].(string)
-// 	if !ok {
-// 		return "", fmt.Errorf("error getting user id from claims: %w", err)
-// 	}
-
-// 	return userID, nil
-// }
