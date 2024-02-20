@@ -36,3 +36,7 @@ DELETE FROM users WHERE user_id = $1;
 
 -- name: VerifyUser :exec
 UPDATE users SET is_verified = true, verification_token = null , updated_at = now() WHERE verification_token = $1  RETURNING *;
+
+
+-- name: CreateArticle :one
+INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *;

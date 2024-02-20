@@ -11,6 +11,38 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createArticle = `-- name: CreateArticle :one
+INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id, title, content, user_id, category_id, created_at, updated_at, is_published
+`
+
+type CreateArticleParams struct {
+	Title      string      `json:"title"`
+	Content    string      `json:"content"`
+	CategoryID pgtype.Int4 `json:"category_id"`
+	UserID     pgtype.UUID `json:"user_id"`
+}
+
+func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (Article, error) {
+	row := q.db.QueryRow(ctx, createArticle,
+		arg.Title,
+		arg.Content,
+		arg.CategoryID,
+		arg.UserID,
+	)
+	var i Article
+	err := row.Scan(
+		&i.ArticleID,
+		&i.Title,
+		&i.Content,
+		&i.UserID,
+		&i.CategoryID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsPublished,
+	)
+	return i, err
+}
+
 const createCategory = `-- name: CreateCategory :one
 INSERT INTO categories (name) VALUES ($1) RETURNING id, name
 `
