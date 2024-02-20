@@ -145,6 +145,7 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":  usr.UserID,
 		"email":    usr.Email,
 		"username": usr.Username,
 		"expiry":   time.Now().Add(time.Hour * 24).Unix(),

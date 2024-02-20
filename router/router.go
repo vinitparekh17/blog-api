@@ -48,6 +48,15 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 
 		})
 
+		r.Route("/article", func(r chi.Router) {
+
+			r.With(jwtauth.Verifier(tokenAuth), jwtauth.Authenticator(tokenAuth)).Group(func(r chi.Router) {
+
+				r.Post("/", h.CreateArticle)
+
+			})
+		})
+
 	})
 
 	return r
