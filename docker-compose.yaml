@@ -28,4 +28,3 @@ volumes:
   compose-postgres-data: 
 
 
-# docker run -dp 5432:5432 -v blog-db-data:/var/lib/postgresql/data --name blog-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=pg123 -e POSTGRES_DB=blog postgres:15-alpine

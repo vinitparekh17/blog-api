@@ -63,21 +63,9 @@ func (h *Handlers) PublishArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId, err := h.query.GetUserIdByArticleId(r.Context(), articleId)
+	err := h.checkUserOwnsArticle(r, articleId)
 	if err != nil {
-		h.respondWithError(w, http.StatusInternalServerError, "error while getting user id")
-		return
-	}
-
-	userID, err := h.extractUserIDFromJWT(r)
-	if err != nil {
-		h.logger.Error("Error extracting user ID from JWT", err)
-		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	if userId != userID {
-		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized for this article")
+		h.respondWithError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
@@ -119,6 +107,27 @@ func (h *Handlers) GetAllArticlesByUser(w http.ResponseWriter, r *http.Request) 
 }
 
 // utils
+
+func (h *Handlers) checkUserOwnsArticle(r *http.Request, articleId pgtype.UUID) error {
+	userId, err := h.query.GetUserIdByArticleId(r.Context(), articleId)
+
+	if err != nil {
+		h.logger.Error("Error fetching user id for article", err)
+		return fmt.Errorf("error while fetching user id for article: %w", err)
+	}
+
+	userID, err := h.extractUserIDFromJWT(r)
+	if err != nil {
+		h.logger.Error("Error extracting user ID from JWT", err)
+		return errors.New("Unauthorized")
+	}
+
+	if userId != userID {
+		return errors.New("unauthorized for this article")
+	}
+
+	return nil
+}
 
 func (h *Handlers) extractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
 	cookie, err := r.Cookie("jwt")
