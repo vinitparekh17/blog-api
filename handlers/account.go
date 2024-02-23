@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jay-bhogayata/blogapi/database"
+	"github.com/jay-bhogayata/blogapi/internal/helper"
 	"github.com/jay-bhogayata/blogapi/mailer"
 )
 
@@ -34,9 +36,18 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		VerificationToken pgtype.Text `json:"verification_token"`
 	}
 	u := requestUser{}
-	err := json.NewDecoder(r.Body).Decode(&u)
+
+	err := helper.DecodeJSONBody(w, r, &u)
 	if err != nil {
-		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+
+		var mr *helper.MalformedRequest
+
+		if errors.As(err, &mr) {
+			http.Error(w, mr.Msg, mr.Status)
+		} else {
+			h.logger.Error(err.Error())
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 		return
 	}
 
