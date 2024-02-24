@@ -18,7 +18,7 @@ func (mr *MalformedRequest) Error() string {
 	return mr.Msg
 }
 
-func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	ct := r.Header.Get("Content-Type")
 	if ct != "" {
 		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
@@ -45,7 +45,7 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 			return &MalformedRequest{Status: http.StatusBadRequest, Msg: Msg}
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			Msg := fmt.Sprintf("Request body contains badly-formed JSON")
+			Msg := "Request body contains badly-formed JSON"
 			return &MalformedRequest{Status: http.StatusBadRequest, Msg: Msg}
 
 		case errors.As(err, &unmarshalTypeError):
@@ -66,7 +66,6 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 			return &MalformedRequest{Status: http.StatusRequestEntityTooLarge, Msg: Msg}
 
 		default:
-			fmt.Println("error------------------------->", err)
 			return err
 		}
 	}
@@ -76,7 +75,6 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 		Msg := "Request body must only contain a single JSON object"
 		return &MalformedRequest{Status: http.StatusBadRequest, Msg: Msg}
 	}
-	fmt.Println("error from json helper", err)
 
 	return nil
 }

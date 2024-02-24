@@ -108,11 +108,10 @@ func (h *Handlers) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) respondWithError(w http.ResponseWriter, code int, message string) {
-	h.logger.Error(message)
 	h.respondWithJSON(w, code, &ErrorResponse{Message: message})
 }
 
-func (h *Handlers) respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+func (h *Handlers) respondWithJSON(w http.ResponseWriter, code int, payload any) {
 	response, err := json.Marshal(payload)
 	if err != nil {
 		h.logger.Error(err.Error())
