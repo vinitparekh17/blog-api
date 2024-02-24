@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/alexedwards/argon2id"
@@ -28,14 +29,13 @@ type Response struct {
 }
 
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	type requestUser struct {
-		Username          string      `json:"username"`
-		Email             string      `json:"email"`
-		PasswordHash      string      `json:"password"`
-		IsVerified        pgtype.Bool `json:"is_verified"`
-		VerificationToken pgtype.Text `json:"verification_token"`
+
+	type ReqUser struct {
+		UserName string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
-	u := requestUser{}
+	u := ReqUser{}
 
 	err := helper.DecodeJSONBody(w, r, &u)
 	if err != nil {
@@ -43,47 +43,59 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		var mr *helper.MalformedRequest
 
 		if errors.As(err, &mr) {
-			http.Error(w, mr.Msg, mr.Status)
+			h.logger.Error("error in decoding json body", "error", err.Error())
+			h.respondWithError(w, mr.Status, mr.Msg)
 		} else {
 			h.logger.Error(err.Error())
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			h.respondWithError(w, mr.Status, http.StatusText(http.StatusInternalServerError))
 		}
 		return
 	}
 
-	hash, err := argon2id.CreateHash(u.PasswordHash, argon2id.DefaultParams)
+	hash, err := argon2id.CreateHash(u.Password, argon2id.DefaultParams)
 	if err != nil {
+		h.logger.Error("error in hashing the password", "error:", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	token, err := h.GenerateToken()
 	if err != nil {
+		h.logger.Error("error in generating verification token", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	usr, err := h.query.CreateUser(r.Context(), database.CreateUserParams{Username: u.Username, Email: u.Email, PasswordHash: hash, IsVerified: pgtype.Bool{Bool: false, Valid: true}, VerificationToken: pgtype.Text{String: token, Valid: true}})
+	usr, err := h.query.CreateUser(r.Context(), database.CreateUserParams{Username: u.UserName, Email: u.Email, PasswordHash: hash, IsVerified: pgtype.Bool{Bool: false, Valid: true}, VerificationToken: pgtype.Text{String: token, Valid: true}})
 	if err != nil {
+
+		errStr := strings.Contains(err.Error(), "duplicate key") && strings.Contains(err.Error(), "users_email_key")
+		if errStr {
+			h.respondWithError(w, http.StatusBadRequest, "email is already taken try to register with different email")
+			return
+		}
+
+		h.logger.Error("error in creating user in database", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	activationLink := fmt.Sprintf("http://localhost:8080/api/v1/accounts/verify?token=%s", token)
-
-	body, err := mailer.SetupVerificationTemplate(u.Username, activationLink)
+	activationLink := fmt.Sprintf("http://%s/api/v1/accounts/verify?token=%s", r.Host, token)
+	body, err := mailer.SetupVerificationTemplate(usr.Username, activationLink)
 	if err != nil {
+		h.logger.Error("error in setting verification template", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	err = mailer.SendEmail(u.Email, "Account Verification", body)
+	err = mailer.SendEmail(usr.Email, "Account Verification", body)
 	if err != nil {
+		h.logger.Error("error in sending email to", usr.Email, err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	msg := fmt.Sprintf("Account created successfully. Verification link has been sent to %s", usr.Email)
+	msg := fmt.Sprintf("account created successfully , verification link has been sent to %s", usr.Email)
 	res := Response{Message: msg}
 
 	h.respondWithJSON(w, http.StatusCreated, res)
@@ -93,11 +105,10 @@ func (h *Handlers) GenerateToken() (token string, err error) {
 	randBytes := make([]byte, 16)
 	_, err = rand.Read(randBytes)
 	if err != nil {
-		h.logger.Error("error generating token", "error", err)
+		h.logger.Error("error generating random token", "error", err)
 		return "", err
 	}
 	return fmt.Sprintf("%x", randBytes), nil
-
 }
 
 func (h *Handlers) VerifyUser(w http.ResponseWriter, r *http.Request) {
