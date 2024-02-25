@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -59,7 +58,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.GenerateToken()
+	token, err := helper.GenerateToken()
 	if err != nil {
 		h.logger.Error("error in generating verification token", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
@@ -99,16 +98,6 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	res := Response{Message: msg}
 
 	h.respondWithJSON(w, http.StatusCreated, res)
-}
-
-func (h *Handlers) GenerateToken() (token string, err error) {
-	randBytes := make([]byte, 16)
-	_, err = rand.Read(randBytes)
-	if err != nil {
-		h.logger.Error("error generating random token", "error", err)
-		return "", err
-	}
-	return fmt.Sprintf("%x", randBytes), nil
 }
 
 func (h *Handlers) VerifyUser(w http.ResponseWriter, r *http.Request) {
