@@ -131,9 +131,10 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 	}
 	u := user{}
 
-	err := json.NewDecoder(r.Body).Decode(&u)
+	err := helper.DecodeJSONBody(w, r, &u)
 	if err != nil {
-		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		h.logger.Error("error in decoding json body", "error", err)
+		h.respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -163,7 +164,7 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 	})
 	tokenString, err := token.SignedString([]byte(h.config.JWTSecret))
 	if err != nil {
-		fmt.Println("err", err)
+		h.logger.Error("error in signing JWT token", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
