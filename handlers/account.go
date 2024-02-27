@@ -197,7 +197,8 @@ func (h *Handlers) GetUserInfoByUserEmail(w http.ResponseWriter, r *http.Request
 
 	usr, err := h.query.GetUserByEmail(r.Context(), mail)
 	if err != nil {
-		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		h.logger.Error("error in getting user by email", "error", err)
+		h.respondWithError(w, http.StatusInternalServerError, "error in getting user by email")
 		return
 	}
 
@@ -210,13 +211,15 @@ func (h *Handlers) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.query.GetAllUsers(r.Context())
 	if err != nil {
-		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		h.logger.Error("error in getting all users", "error", err)
+		h.respondWithError(w, http.StatusInternalServerError, "error in getting all users")
 		return
 	}
 
 	res, err := json.Marshal(user)
 	if err != nil {
-		h.respondWithError(w, http.StatusInternalServerError, err.Error())
+		h.logger.Error("error in marshalling users", "error", err)
+		h.respondWithError(w, http.StatusInternalServerError, "error in marshalling users")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
