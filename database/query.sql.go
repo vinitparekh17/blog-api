@@ -98,24 +98,38 @@ func (q *Queries) DeleteUser(ctx context.Context, userID pgtype.UUID) error {
 }
 
 const getAllArticleByUser = `-- name: GetAllArticleByUser :many
-SELECT article_id, title, content, user_id, category_id, created_at, updated_at, is_published FROM articles WHERE user_id = $1
+SELECT a.article_id, a.title, a.content, a.user_id, c.name as category_name, a.created_at, a.updated_at, a.is_published
+FROM articles a
+LEFT JOIN categories c ON a.category_id = c.id
+WHERE a.user_id = $1
 `
 
-func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) ([]Article, error) {
+type GetAllArticleByUserRow struct {
+	ArticleID    pgtype.UUID      `json:"article_id"`
+	Title        string           `json:"title"`
+	Content      string           `json:"content"`
+	UserID       pgtype.UUID      `json:"user_id"`
+	CategoryName pgtype.Text      `json:"category_name"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
+	IsPublished  pgtype.Bool      `json:"is_published"`
+}
+
+func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) ([]GetAllArticleByUserRow, error) {
 	rows, err := q.db.Query(ctx, getAllArticleByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Article
+	var items []GetAllArticleByUserRow
 	for rows.Next() {
-		var i Article
+		var i GetAllArticleByUserRow
 		if err := rows.Scan(
 			&i.ArticleID,
 			&i.Title,
 			&i.Content,
 			&i.UserID,
-			&i.CategoryID,
+			&i.CategoryName,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.IsPublished,
@@ -131,24 +145,38 @@ func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) (
 }
 
 const getAllArticles = `-- name: GetAllArticles :many
-SELECT article_id, title, content, user_id, category_id, created_at, updated_at, is_published FROM articles where is_published = true
+SELECT a.article_id, a.title, a.content, a.user_id, c.name as category_name, a.created_at, a.updated_at, a.is_published
+FROM articles a
+LEFT JOIN categories c ON a.category_id = c.id
+WHERE a.is_published = true
 `
 
-func (q *Queries) GetAllArticles(ctx context.Context) ([]Article, error) {
+type GetAllArticlesRow struct {
+	ArticleID    pgtype.UUID      `json:"article_id"`
+	Title        string           `json:"title"`
+	Content      string           `json:"content"`
+	UserID       pgtype.UUID      `json:"user_id"`
+	CategoryName pgtype.Text      `json:"category_name"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
+	IsPublished  pgtype.Bool      `json:"is_published"`
+}
+
+func (q *Queries) GetAllArticles(ctx context.Context) ([]GetAllArticlesRow, error) {
 	rows, err := q.db.Query(ctx, getAllArticles)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Article
+	var items []GetAllArticlesRow
 	for rows.Next() {
-		var i Article
+		var i GetAllArticlesRow
 		if err := rows.Scan(
 			&i.ArticleID,
 			&i.Title,
 			&i.Content,
 			&i.UserID,
-			&i.CategoryID,
+			&i.CategoryName,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.IsPublished,
