@@ -12,3 +12,8 @@ This is a simple blog backend that allows you to create, read, update and delete
 - sqlc 1.25.0 and above
 - golang-migrate 4.17.0 and above
 
+## Usage
+
+```bash
+make run
+```

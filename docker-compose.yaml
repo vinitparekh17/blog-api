@@ -1,15 +1,14 @@
 version: '3.8'
 services:
-  blog-api:
-    image: blog-api:latest
-    container_name: blog-api
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./.env.sample:/app/.env
-    restart: always
-    depends_on:
-      - postgres
+  # blog-api:
+  #   build: .
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./.env.sample:/app/.env
+  #   restart: always
+  #   depends_on:
+  #     - postgres
   
   postgres:
     image: postgres:15-alpine
