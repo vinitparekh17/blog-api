@@ -12,21 +12,21 @@ import (
 )
 
 const createArticle = `-- name: CreateArticle :one
-INSERT INTO articles (title, content, category_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id
+INSERT INTO articles (title, content, tag_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id
 `
 
 type CreateArticleParams struct {
-	Title      string      `json:"title"`
-	Content    string      `json:"content"`
-	CategoryID pgtype.Int4 `json:"category_id"`
-	UserID     pgtype.UUID `json:"user_id"`
+	Title   string      `json:"title"`
+	Content string      `json:"content"`
+	TagID   pgtype.Int4 `json:"Tag_id"`
+	UserID  pgtype.UUID `json:"user_id"`
 }
 
 func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (pgtype.UUID, error) {
 	row := q.db.QueryRow(ctx, createArticle,
 		arg.Title,
 		arg.Content,
-		arg.CategoryID,
+		arg.TagID,
 		arg.UserID,
 	)
 	var article_id pgtype.UUID
@@ -34,13 +34,13 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (p
 	return article_id, err
 }
 
-const createCategory = `-- name: CreateCategory :one
-INSERT INTO categories (name) VALUES ($1) RETURNING id, name
+const createTag = `-- name: CreateTag :one
+INSERT INTO tags (name) VALUES ($1) RETURNING id, name
 `
 
-func (q *Queries) CreateCategory(ctx context.Context, name string) (Category, error) {
-	row := q.db.QueryRow(ctx, createCategory, name)
-	var i Category
+func (q *Queries) CreateTag(ctx context.Context, name string) (Tag, error) {
+	row := q.db.QueryRow(ctx, createTag, name)
+	var i Tag
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
@@ -79,12 +79,12 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
-const deleteCategory = `-- name: DeleteCategory :exec
-DELETE FROM categories WHERE id = $1
+const deleteTag = `-- name: DeleteTag :exec
+DELETE FROM tags WHERE id = $1
 `
 
-func (q *Queries) DeleteCategory(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deleteCategory, id)
+func (q *Queries) DeleteTag(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteTag, id)
 	return err
 }
 
@@ -98,21 +98,21 @@ func (q *Queries) DeleteUser(ctx context.Context, userID pgtype.UUID) error {
 }
 
 const getAllArticleByUser = `-- name: GetAllArticleByUser :many
-SELECT a.article_id, a.title, a.content, a.user_id, c.name as category_name, a.created_at, a.updated_at, a.is_published
+SELECT a.article_id, a.title, a.content, a.user_id, c.name as Tag_name, a.created_at, a.updated_at, a.is_published
 FROM articles a
-LEFT JOIN categories c ON a.category_id = c.id
+LEFT JOIN Tags c ON a.tag_id = c.id
 WHERE a.user_id = $1
 `
 
 type GetAllArticleByUserRow struct {
-	ArticleID    pgtype.UUID      `json:"article_id"`
-	Title        string           `json:"title"`
-	Content      string           `json:"content"`
-	UserID       pgtype.UUID      `json:"user_id"`
-	CategoryName pgtype.Text      `json:"category_name"`
-	CreatedAt    pgtype.Timestamp `json:"created_at"`
-	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
-	IsPublished  pgtype.Bool      `json:"is_published"`
+	ArticleID   pgtype.UUID      `json:"article_id"`
+	Title       string           `json:"title"`
+	Content     string           `json:"content"`
+	UserID      pgtype.UUID      `json:"user_id"`
+	TagName     pgtype.Text      `json:"tag_name"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	IsPublished pgtype.Bool      `json:"is_published"`
 }
 
 func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) ([]GetAllArticleByUserRow, error) {
@@ -129,7 +129,7 @@ func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) (
 			&i.Title,
 			&i.Content,
 			&i.UserID,
-			&i.CategoryName,
+			&i.TagName,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.IsPublished,
@@ -145,21 +145,21 @@ func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) (
 }
 
 const getAllArticles = `-- name: GetAllArticles :many
-SELECT a.article_id, a.title, a.content, a.user_id, c.name as category_name, a.created_at, a.updated_at, a.is_published
+SELECT a.article_id, a.title, a.content, a.user_id, t.name as tag_name, a.created_at, a.updated_at, a.is_published
 FROM articles a
-LEFT JOIN categories c ON a.category_id = c.id
+LEFT JOIN tags t ON a.tag_id = t.id
 WHERE a.is_published = true
 `
 
 type GetAllArticlesRow struct {
-	ArticleID    pgtype.UUID      `json:"article_id"`
-	Title        string           `json:"title"`
-	Content      string           `json:"content"`
-	UserID       pgtype.UUID      `json:"user_id"`
-	CategoryName pgtype.Text      `json:"category_name"`
-	CreatedAt    pgtype.Timestamp `json:"created_at"`
-	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
-	IsPublished  pgtype.Bool      `json:"is_published"`
+	ArticleID   pgtype.UUID      `json:"article_id"`
+	Title       string           `json:"title"`
+	Content     string           `json:"content"`
+	UserID      pgtype.UUID      `json:"user_id"`
+	TagName     pgtype.Text      `json:"tag_name"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	IsPublished pgtype.Bool      `json:"is_published"`
 }
 
 func (q *Queries) GetAllArticles(ctx context.Context) ([]GetAllArticlesRow, error) {
@@ -176,7 +176,7 @@ func (q *Queries) GetAllArticles(ctx context.Context) ([]GetAllArticlesRow, erro
 			&i.Title,
 			&i.Content,
 			&i.UserID,
-			&i.CategoryName,
+			&i.TagName,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.IsPublished,
@@ -191,19 +191,19 @@ func (q *Queries) GetAllArticles(ctx context.Context) ([]GetAllArticlesRow, erro
 	return items, nil
 }
 
-const getAllCategories = `-- name: GetAllCategories :many
-SELECT id, name FROM categories
+const getAllTags = `-- name: GetAllTags :many
+SELECT id, name FROM tags
 `
 
-func (q *Queries) GetAllCategories(ctx context.Context) ([]Category, error) {
-	rows, err := q.db.Query(ctx, getAllCategories)
+func (q *Queries) GetAllTags(ctx context.Context) ([]Tag, error) {
+	rows, err := q.db.Query(ctx, getAllTags)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Category
+	var items []Tag
 	for rows.Next() {
-		var i Category
+		var i Tag
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
@@ -251,13 +251,13 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
 	return items, nil
 }
 
-const getCategoryById = `-- name: GetCategoryById :one
-SELECT id, name FROM categories WHERE id = $1
+const getTagById = `-- name: GetTagById :one
+SELECT id, name FROM tags WHERE id = $1
 `
 
-func (q *Queries) GetCategoryById(ctx context.Context, id int32) (Category, error) {
-	row := q.db.QueryRow(ctx, getCategoryById, id)
-	var i Category
+func (q *Queries) GetTagById(ctx context.Context, id int32) (Tag, error) {
+	row := q.db.QueryRow(ctx, getTagById, id)
+	var i Tag
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
@@ -342,18 +342,18 @@ func (q *Queries) PublishArticle(ctx context.Context, articleID pgtype.UUID) err
 	return err
 }
 
-const updateCategory = `-- name: UpdateCategory :one
-UPDATE categories SET name = $1 WHERE id = $2 RETURNING id, name
+const updateTag = `-- name: UpdateTag :one
+UPDATE tags SET name = $1 WHERE id = $2 RETURNING id, name
 `
 
-type UpdateCategoryParams struct {
+type UpdateTagParams struct {
 	Name string `json:"name"`
 	ID   int32  `json:"id"`
 }
 
-func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (Category, error) {
-	row := q.db.QueryRow(ctx, updateCategory, arg.Name, arg.ID)
-	var i Category
+func (q *Queries) UpdateTag(ctx context.Context, arg UpdateTagParams) (Tag, error) {
+	row := q.db.QueryRow(ctx, updateTag, arg.Name, arg.ID)
+	var i Tag
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }

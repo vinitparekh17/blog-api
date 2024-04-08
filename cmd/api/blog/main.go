@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jay-bhogayata/blogapi/config"
@@ -27,25 +29,25 @@ func main() {
 		logger.Log.Info("error in loading the config")
 	}
 
-	var choice int16
+	if len(os.Args) <= 1 {
+		logger.Log.Info("Arguments not found")
+		logger.Log.Info("Starting blog API as per default choice...")
+		InitApi(cfg)
+	}
 
-	for {
-
+	choice, err := strconv.Atoi(os.Args[1:][0])
+	if err != nil {
 		fmt.Println(`
 1. Start Blog API
 2. Migration UP
 3. Migration Down
-4. Exit
 
-Enter the number to choose:
-( Default 1 )`)
-		fmt.Scanln(&choice)
+Invalid Argument, Choose between 1 to 3`)
+		return
+	}
 
+	for {
 		switch choice {
-
-		case 0:
-			fmt.Println("Starting blog API as per default choice...")
-			InitApi(cfg)
 
 		case 1:
 			InitApi(cfg)
@@ -60,6 +62,7 @@ Enter the number to choose:
 			} else {
 				fmt.Println("Migration up successfull")
 			}
+			return
 
 		case 3:
 			m, err := migrate.New("file://migrations", cfg.Database.DBURL)
@@ -71,6 +74,7 @@ Enter the number to choose:
 			} else {
 				fmt.Println("Migration down successfull")
 			}
+			return
 
 		case 4:
 			return
