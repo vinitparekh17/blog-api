@@ -2,8 +2,8 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth/v5"
-
 	"github.com/jay-bhogayata/blogapi/config"
 	"github.com/jay-bhogayata/blogapi/handlers"
 	"github.com/jay-bhogayata/blogapi/middleware"
@@ -19,22 +19,29 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 
 	r.Use(middleware.Logging)
 
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}))
+
 	r.Route("/api/v1", func(r chi.Router) {
 
 		r.Get("/health", h.CheckHealth)
 
-		r.Route("/catagories", func(r chi.Router) {
+		r.Route("/tags", func(r chi.Router) {
 
 			r.With(jwtauth.Verifier(tokenAuth), jwtauth.Authenticator(tokenAuth)).Group(func(r chi.Router) {
 
-				r.Post("/", h.CreateCategory)
-				r.Put("/", h.UpdateCategory)
-				r.Delete("/{id}", h.DeleteCategory)
+				r.Post("/", h.CreateTag)
+				r.Put("/", h.UpdateTag)
+				r.Delete("/{id}", h.DeleteTag)
 
 			})
 
-			r.Get("/", h.GetAllCategories)
-			r.Get("/{id}", h.GetCategoryByID)
+			r.Get("/", h.GetAllTags)
+			r.Get("/{id}", h.GetTagByID)
 		})
 		r.Route("/accounts", func(r chi.Router) {
 			r.Post("/register", h.RegisterUser)
