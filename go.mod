@@ -4,6 +4,7 @@ go 1.21.5
 
 require (
 	github.com/alexedwards/argon2id v1.0.0
+	github.com/elastic/go-elasticsearch/v8 v8.13.1
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/jwtauth/v5 v5.3.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
@@ -28,7 +29,6 @@ require (
 	github.com/aws/smithy-go v1.19.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.5.0 // indirect
-	github.com/elastic/go-elasticsearch/v8 v8.13.1 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
