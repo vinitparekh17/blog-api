@@ -80,7 +80,8 @@ Invalid Argument, Choose between 1 to 3`)
 			return
 
 		default:
-			fmt.Println("Invalid choice")
+			logger.Log.Warn("Invalid choice")
+			return
 		}
 	}
 }
