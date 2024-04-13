@@ -2,10 +2,10 @@ package config
 
 import (
 	"errors"
+	"log"
 	"os"
 	"strconv"
 
-	"github.com/jay-bhogayata/blogapi/logger"
 	"github.com/joho/godotenv"
 )
 
@@ -21,48 +21,44 @@ type Config struct {
 	JWTSecret   string
 }
 
-func LoadConfig() (*Config, error) {
-
+func init() {
 	err := godotenv.Load()
 	if err != nil {
-		logger.Log.Error("error in loading .env file")
-		return nil, err
+		log.Fatalf("Error loading .env file")
 	}
+}
 
+func LoadConfig() (*Config, error) {
 	var cfg Config
 
 	cfg.Server.Port = os.Getenv("SERVER_PORT")
 	if cfg.Server.Port == "" {
-		logger.Log.Warn("no SERVER_PORT env variable provided defaulting to port 8080")
+		log.Println("No SERVER_PORT found in env file, using default port 8080")
 		cfg.Server.Port = "8080"
 	}
 	if _, err := strconv.Atoi(cfg.Server.Port); err != nil {
-		logger.Log.Warn("invalid SERVER_PORT, using default port 8080")
-
+		log.Println("Invalid SERVER_PORT found in env file, using default port 8080")
 		cfg.Server.Port = "8080"
 	}
 
 	cfg.Database.DBURL = os.Getenv("DATABASE_URL")
 	if cfg.Database.DBURL == "" {
-		logger.Log.Error("no DATABASE_URL found in env file")
 		return nil, errors.New("DATABASE_URL env not found")
 	}
 
 	cfg.Env = os.Getenv("ENV")
 	if cfg.Env == "" {
-		logger.Log.Error("no ENV env variable provided defaulting to dev")
+		log.Println("No ENV found in env file, using default DEV")
 		cfg.Env = "DEV"
 	}
 
 	cfg.EmailSender = os.Getenv("MAILER_SENDER")
 	if cfg.EmailSender == "" {
-		logger.Log.Error("no MAILER_SENDER env variable provided")
 		return nil, errors.New("MAILER_SENDER env not found")
 	}
 
 	cfg.JWTSecret = os.Getenv("JWT_SECRET")
 	if cfg.JWTSecret == "" {
-		logger.Log.Error("no JWT_SECRET env variable provided")
 		return nil, errors.New("JWT_SECRET env not found")
 	}
 

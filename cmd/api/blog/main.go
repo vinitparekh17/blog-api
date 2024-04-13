@@ -21,12 +21,12 @@ import (
 )
 
 func main() {
+	cfg, err := config.LoadConfig()
 	logger.Init()
 
-	cfg, err := config.LoadConfig()
-
 	if err != nil {
-		logger.Log.Info("error in loading the config")
+		logger.Log.Error("Error in loading the config file", "error", err)
+		return
 	}
 
 	if len(os.Args) <= 1 {
