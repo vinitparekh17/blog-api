@@ -22,14 +22,14 @@ func (h *Handlers) CreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// userID, err := h.extractUserIDFromJWT(r)
-	// if err != nil {
-	// 	h.logger.Error("Error extracting user ID from JWT", err)
-	// 	h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
-	// 	return
-	// }
+	userID, err := h.extractUserIDFromJWT(r)
+	if err != nil {
+		h.logger.Error("Error extracting user ID from JWT", err)
+		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
 
-	// article.UserID = userID
+	article.UserID = userID
 
 	res, err := h.query.CreateArticle(ctx, article)
 	if err != nil {

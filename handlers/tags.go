@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jay-bhogayata/blogapi/database"
-	"github.com/jay-bhogayata/blogapi/internal/helper"
 )
 
 type ErrorResponse struct {
@@ -52,16 +51,14 @@ func (h *Handlers) GetTagByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) CreateTag(w http.ResponseWriter, r *http.Request) {
-	var Tag Tag
+	var tag Tag
 
-	err := helper.DecodeJSONBody(w, r, &Tag)
-	if err != nil {
-		h.logger.Error("error while decoding request body", "error", err.Error())
-		h.respondWithError(w, http.StatusBadRequest, err.Error())
+	if err := json.NewDecoder(r.Body).Decode(&tag); err != nil {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	id, err := h.query.CreateTag(r.Context(), Tag.Name)
+	id, err := h.query.CreateTag(r.Context(), tag.Name)
 	if err != nil {
 		h.logger.Error("error while creating Tag", "error", err.Error())
 		h.respondWithError(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
@@ -72,15 +69,13 @@ func (h *Handlers) CreateTag(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) UpdateTag(w http.ResponseWriter, r *http.Request) {
-	var Tag database.UpdateTagParams
-	err := helper.DecodeJSONBody(w, r, &Tag)
-	if err != nil {
-		h.logger.Error("error while decoding request body", "error", err.Error())
-		h.respondWithError(w, http.StatusBadRequest, err.Error())
+	var tag database.UpdateTagParams
+	if err := json.NewDecoder(r.Body).Decode(&tag); err != nil {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	updatedTag, err := h.query.UpdateTag(r.Context(), Tag)
+	updatedTag, err := h.query.UpdateTag(r.Context(), tag)
 	if err != nil {
 		h.logger.Error("error while updating Tag", "error", err.Error())
 		h.respondWithError(w, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
