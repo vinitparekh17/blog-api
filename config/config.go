@@ -16,9 +16,10 @@ type Config struct {
 	Database struct {
 		DBURL string
 	}
-	Env         string
-	EmailSender string
-	JWTSecret   string
+	Env              string
+	EmailSender      string
+	JWTSecret        string
+	ElasticSearchURL string
 }
 
 func init() {
@@ -31,6 +32,26 @@ func init() {
 func LoadConfig() (*Config, error) {
 	var cfg Config
 
+	cfg.Database.DBURL = os.Getenv("DATABASE_URL")
+	if cfg.Database.DBURL == "" {
+		return nil, errors.New("DATABASE_URL env not found")
+	}
+
+	cfg.ElasticSearchURL = os.Getenv("ELASTICSEARCH_URL")
+	if cfg.ElasticSearchURL == "" {
+		return nil, errors.New("ELASTICSEARCH_URL env not found")
+	}
+
+	cfg.JWTSecret = os.Getenv("JWT_SECRET")
+	if cfg.JWTSecret == "" {
+		return nil, errors.New("JWT_SECRET env not found")
+	}
+
+	cfg.EmailSender = os.Getenv("MAILER_SENDER")
+	if cfg.EmailSender == "" {
+		return nil, errors.New("MAILER_SENDER env not found")
+	}
+
 	cfg.Server.Port = os.Getenv("SERVER_PORT")
 	if cfg.Server.Port == "" {
 		log.Println("No SERVER_PORT found in env file, using default port 8080")
@@ -41,25 +62,10 @@ func LoadConfig() (*Config, error) {
 		cfg.Server.Port = "8080"
 	}
 
-	cfg.Database.DBURL = os.Getenv("DATABASE_URL")
-	if cfg.Database.DBURL == "" {
-		return nil, errors.New("DATABASE_URL env not found")
-	}
-
 	cfg.Env = os.Getenv("ENV")
 	if cfg.Env == "" {
 		log.Println("No ENV found in env file, using default DEV")
 		cfg.Env = "DEV"
-	}
-
-	cfg.EmailSender = os.Getenv("MAILER_SENDER")
-	if cfg.EmailSender == "" {
-		return nil, errors.New("MAILER_SENDER env not found")
-	}
-
-	cfg.JWTSecret = os.Getenv("JWT_SECRET")
-	if cfg.JWTSecret == "" {
-		return nil, errors.New("JWT_SECRET env not found")
 	}
 
 	return &cfg, nil
