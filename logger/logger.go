@@ -13,7 +13,7 @@ func Init() {
 
 	env := os.Getenv("ENV")
 
-	if env == "DEV" {
+	if env == "development" {
 
 		Log = slog.New(tint.NewHandler(os.Stdout, nil))
 

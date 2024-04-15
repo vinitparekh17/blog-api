@@ -16,10 +16,14 @@ type Config struct {
 	Database struct {
 		DBURL string
 	}
-	Env              string
-	EmailSender      string
-	JWTSecret        string
-	ElasticSearchURL string
+	Env         string
+	EmailSender string
+	JWTSecret   string
+	OpenSearch  struct {
+		URL      string
+		UserName string
+		Password string
+	}
 }
 
 func init() {
@@ -37,9 +41,19 @@ func LoadConfig() (*Config, error) {
 		return nil, errors.New("DATABASE_URL env not found")
 	}
 
-	cfg.ElasticSearchURL = os.Getenv("ELASTICSEARCH_URL")
-	if cfg.ElasticSearchURL == "" {
-		return nil, errors.New("ELASTICSEARCH_URL env not found")
+	cfg.OpenSearch.URL = os.Getenv("OPENSEARCH_URL")
+	if cfg.OpenSearch.URL == "" {
+		return nil, errors.New("OPENSEARCH_URL env not found")
+	}
+
+	cfg.OpenSearch.UserName = os.Getenv("OPENSEARCH_USERNAME")
+	if cfg.OpenSearch.UserName == "" {
+		return nil, errors.New("OPENSEARCH_USERNAME env not found")
+	}
+
+	cfg.OpenSearch.Password = os.Getenv("OPENSEARCH_PASSWORD")
+	if cfg.OpenSearch.Password == "" {
+		return nil, errors.New("OPENSEARCH_PASSWORD env not found")
 	}
 
 	cfg.JWTSecret = os.Getenv("JWT_SECRET")
@@ -64,8 +78,8 @@ func LoadConfig() (*Config, error) {
 
 	cfg.Env = os.Getenv("ENV")
 	if cfg.Env == "" {
-		log.Println("No ENV found in env file, using default DEV")
-		cfg.Env = "DEV"
+		log.Println("No ENV found in env file, using default development")
+		cfg.Env = "development"
 	}
 
 	return &cfg, nil
