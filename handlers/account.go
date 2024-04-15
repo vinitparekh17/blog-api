@@ -42,10 +42,10 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		var mr *helper.MalformedRequest
 
 		if errors.As(err, &mr) {
-			h.logger.Error("error in decoding json body", "error", err.Error())
+			h.Logger.Error("error in decoding json body", "error", err.Error())
 			h.respondWithError(w, mr.Status, mr.Msg)
 		} else {
-			h.logger.Error(err.Error())
+			h.Logger.Error(err.Error())
 			h.respondWithError(w, mr.Status, http.StatusText(http.StatusInternalServerError))
 		}
 		return
@@ -53,19 +53,19 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := argon2id.CreateHash(u.Password, argon2id.DefaultParams)
 	if err != nil {
-		h.logger.Error("error in hashing the password", "error:", err)
+		h.Logger.Error("error in hashing the password", "error:", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	token, err := helper.GenerateToken()
 	if err != nil {
-		h.logger.Error("error in generating verification token", "error", err)
+		h.Logger.Error("error in generating verification token", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	usr, err := h.query.CreateUser(r.Context(), database.CreateUserParams{Username: u.UserName, Email: u.Email, PasswordHash: hash, IsVerified: pgtype.Bool{Bool: false, Valid: true}, VerificationToken: pgtype.Text{String: token, Valid: true}})
+	usr, err := h.Query.CreateUser(r.Context(), database.CreateUserParams{Username: u.UserName, Email: u.Email, PasswordHash: hash, IsVerified: pgtype.Bool{Bool: false, Valid: true}, VerificationToken: pgtype.Text{String: token, Valid: true}})
 	if err != nil {
 
 		errStr := strings.Contains(err.Error(), "duplicate key") && strings.Contains(err.Error(), "users_email_key")
@@ -74,7 +74,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.logger.Error("error in creating user in database", "error", err)
+		h.Logger.Error("error in creating user in database", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
@@ -82,14 +82,14 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	activationLink := fmt.Sprintf("http://%s/api/v1/accounts/verify?token=%s", r.Host, token)
 	body, err := mailer.SetupVerificationTemplate(usr.Username, activationLink)
 	if err != nil {
-		h.logger.Error("error in setting verification template", err)
+		h.Logger.Error("error in setting verification template", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	err = mailer.SendEmail(usr.Email, "Account Verification", body)
 	if err != nil {
-		h.logger.Error("error in sending email to", usr.Email, err)
+		h.Logger.Error("error in sending email to", usr.Email, err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
@@ -108,15 +108,15 @@ func (h *Handlers) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.query.GetUserByVerificationToken(r.Context(), pgtype.Text{String: token, Valid: true})
+	u, err := h.Query.GetUserByVerificationToken(r.Context(), pgtype.Text{String: token, Valid: true})
 	if err != nil {
-		h.logger.Error("error getting user by verification token", "error", err)
+		h.Logger.Error("error getting user by verification token", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	err = h.query.VerifyUser(r.Context(), u.VerificationToken)
+	err = h.Query.VerifyUser(r.Context(), u.VerificationToken)
 	if err != nil {
-		h.logger.Error("error verifying user", "error", err)
+		h.Logger.Error("error verifying user", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -133,12 +133,12 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	err := helper.DecodeJSONBody(w, r, &u)
 	if err != nil {
-		h.logger.Error("error in decoding json body", "error", err)
+		h.Logger.Error("error in decoding json body", "error", err)
 		h.respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	usr, err := h.query.GetUserByEmail(r.Context(), u.Email)
+	usr, err := h.Query.GetUserByEmail(r.Context(), u.Email)
 	if err != nil {
 		fmt.Println("err", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
@@ -162,9 +162,9 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 		"username": usr.Username,
 		"expiry":   time.Now().Add(time.Hour * 24).Unix(),
 	})
-	tokenString, err := token.SignedString([]byte(h.config.JWTSecret))
+	tokenString, err := token.SignedString([]byte(h.Config.JWTSecret))
 	if err != nil {
-		h.logger.Error("error in signing JWT token", "error", err)
+		h.Logger.Error("error in signing JWT token", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
@@ -195,9 +195,9 @@ func (h *Handlers) LogoutUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) GetUserInfoByUserEmail(w http.ResponseWriter, r *http.Request) {
 	mail := chi.URLParam(r, "mail")
 
-	usr, err := h.query.GetUserByEmail(r.Context(), mail)
+	usr, err := h.Query.GetUserByEmail(r.Context(), mail)
 	if err != nil {
-		h.logger.Error("error in getting user by email", "error", err)
+		h.Logger.Error("error in getting user by email", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "error in getting user by email")
 		return
 	}
@@ -209,16 +209,16 @@ func (h *Handlers) GetUserInfoByUserEmail(w http.ResponseWriter, r *http.Request
 
 func (h *Handlers) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 
-	user, err := h.query.GetAllUsers(r.Context())
+	user, err := h.Query.GetAllUsers(r.Context())
 	if err != nil {
-		h.logger.Error("error in getting all users", "error", err)
+		h.Logger.Error("error in getting all users", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "error in getting all users")
 		return
 	}
 
 	res, err := json.Marshal(user)
 	if err != nil {
-		h.logger.Error("error in marshalling users", "error", err)
+		h.Logger.Error("error in marshalling users", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "error in marshalling users")
 		return
 	}

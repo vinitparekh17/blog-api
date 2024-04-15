@@ -22,18 +22,18 @@ func (h *Handlers) CreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, err := h.extractUserIDFromJWT(r)
+	userID, err := h.ExtractUserIDFromJWT(r)
 	if err != nil {
-		h.logger.Error("Error extracting user ID from JWT", err)
+		h.Logger.Error("Error extracting user ID from JWT", err)
 		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	article.UserID = userID
 
-	res, err := h.query.CreateArticle(ctx, article)
+	res, err := h.Query.CreateArticle(ctx, article)
 	if err != nil {
-		h.logger.Error("Error creating article", err)
+		h.Logger.Error("Error creating article", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
@@ -63,13 +63,13 @@ func (h *Handlers) PublishArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.checkUserOwnsArticle(r, articleId)
+	err := h.CheckUserOwnsArticle(r, articleId)
 	if err != nil {
 		h.respondWithError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	err = h.query.PublishArticle(r.Context(), articleId)
+	err = h.Query.PublishArticle(r.Context(), articleId)
 	if err != nil {
 		h.respondWithError(w, http.StatusInternalServerError, "error while publishing article")
 		return
@@ -80,7 +80,7 @@ func (h *Handlers) PublishArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetAllArticles(w http.ResponseWriter, r *http.Request) {
-	articles, err := h.query.GetAllArticles(r.Context())
+	articles, err := h.Query.GetAllArticles(r.Context())
 	if err != nil {
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
@@ -90,14 +90,14 @@ func (h *Handlers) GetAllArticles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetAllArticlesByUser(w http.ResponseWriter, r *http.Request) {
-	userID, err := h.extractUserIDFromJWT(r)
+	userID, err := h.ExtractUserIDFromJWT(r)
 	if err != nil {
-		h.logger.Error("Error extracting user ID from JWT", err)
+		h.Logger.Error("Error extracting user ID from JWT", err)
 		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	articles, err := h.query.GetAllArticleByUser(r.Context(), userID)
+	articles, err := h.Query.GetAllArticleByUser(r.Context(), userID)
 	if err != nil {
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
@@ -106,19 +106,17 @@ func (h *Handlers) GetAllArticlesByUser(w http.ResponseWriter, r *http.Request) 
 	h.respondWithJSON(w, http.StatusOK, articles)
 }
 
-// utils
-
-func (h *Handlers) checkUserOwnsArticle(r *http.Request, articleId pgtype.UUID) error {
-	userId, err := h.query.GetUserIdByArticleId(r.Context(), articleId)
+func (h *Handlers) CheckUserOwnsArticle(r *http.Request, articleId pgtype.UUID) error {
+	userId, err := h.Query.GetUserIdByArticleId(r.Context(), articleId)
 
 	if err != nil {
-		h.logger.Error("Error fetching user id for article", err)
+		h.Logger.Error("Error fetching user id for article", err)
 		return fmt.Errorf("error while fetching user id for article: %w", err)
 	}
 
-	userID, err := h.extractUserIDFromJWT(r)
+	userID, err := h.ExtractUserIDFromJWT(r)
 	if err != nil {
-		h.logger.Error("Error extracting user ID from JWT", err)
+		h.Logger.Error("Error extracting user ID from JWT", err)
 		return errors.New("Unauthorized")
 	}
 
@@ -129,7 +127,24 @@ func (h *Handlers) checkUserOwnsArticle(r *http.Request, articleId pgtype.UUID) 
 	return nil
 }
 
-func (h *Handlers) extractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
+func (h *Handlers) SearchArticle(w http.ResponseWriter, r *http.Request) {
+	searchQuery := r.URL.Query().Get("q")
+	if searchQuery == "" {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload search query is missing")
+		return
+	}
+
+	resp, err := h.OpenSearchClient.SearchQuery("articles", searchQuery)
+	if err != nil {
+		h.Logger.Error("Error searching article", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+	defer resp.Body.Close()
+	h.respondWithJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handlers) ExtractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
 	cookie, err := r.Cookie("jwt")
 	if err != nil {
 		return pgtype.UUID{}, errors.New("missing or invalid JWT")
@@ -139,7 +154,7 @@ func (h *Handlers) extractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("invalid signing method")
 		}
-		return []byte(h.config.JWTSecret), nil
+		return []byte(h.Config.JWTSecret), nil
 	})
 	if err != nil {
 		return pgtype.UUID{}, fmt.Errorf("error parsing token: %w", err)

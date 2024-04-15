@@ -6,8 +6,10 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jay-bhogayata/blogapi/config"
 	"github.com/jay-bhogayata/blogapi/database"
+	openSearchClient "github.com/jay-bhogayata/blogapi/opensearch"
 )
 
 type DB interface {
@@ -15,18 +17,19 @@ type DB interface {
 }
 
 type Handlers struct {
-	DB     DB
-	query  *database.Queries
-	logger *slog.Logger
-	config *config.Config
+	DB               *pgxpool.Pool
+	OpenSearchClient *openSearchClient.OpenSearch
+	Query            *database.Queries
+	Logger           *slog.Logger
+	Config           *config.Config
 }
 
-func NewHandlers(config *config.Config, db DB, query *database.Queries, logger *slog.Logger) *Handlers {
+func NewHandlers(handleConf *Handlers) *Handlers {
 	return &Handlers{
-		DB:     db,
-		query:  query,
-		logger: logger,
-		config: config,
+		DB:     handleConf.DB,
+		Query:  handleConf.Query,
+		Logger: handleConf.Logger,
+		Config: handleConf.Config,
 	}
 }
 
@@ -38,7 +41,7 @@ func (h *Handlers) CheckHealth(w http.ResponseWriter, r *http.Request) {
 
 	err := h.DB.Ping(r.Context())
 	if err != nil {
-		h.logger.Error("error while pining the db", err)
+		h.Logger.Error("error while pining the db", err)
 		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
@@ -49,7 +52,7 @@ func (h *Handlers) CheckHealth(w http.ResponseWriter, r *http.Request) {
 
 	res, err := json.Marshal(hr)
 	if err != nil {
-		h.logger.Error("error marshalling health response: ", "error", err)
+		h.Logger.Error("error marshalling health response: ", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

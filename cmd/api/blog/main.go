@@ -7,11 +7,11 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jay-bhogayata/blogapi/config"
 	"github.com/jay-bhogayata/blogapi/database"
 	"github.com/jay-bhogayata/blogapi/handlers"
 	"github.com/jay-bhogayata/blogapi/logger"
+	openSearchClient "github.com/jay-bhogayata/blogapi/opensearch"
 	"github.com/jay-bhogayata/blogapi/router"
 	"github.com/jay-bhogayata/blogapi/server"
 
@@ -88,11 +88,30 @@ Invalid Argument, Choose between 1 to 3`)
 
 func InitApi(cfg *config.Config) {
 
-	db := InitDatabase(cfg.Database.DBURL)
+	db, dbErr := database.Init(context.Background(), cfg.Database.DBURL)
+	if dbErr != nil {
+		log.Fatalf(dbErr.Error())
+	}
+
+	osc, ose := openSearchClient.NewOpenSearchClient(&openSearchClient.OpenSearchConfig{
+		URL:      cfg.OpenSearch.URL,
+		UserName: cfg.OpenSearch.UserName,
+		Password: cfg.OpenSearch.Password,
+	})
+
+	if ose != nil {
+		log.Fatalf(ose.Error())
+	}
 
 	query := database.New(db)
 
-	handlers := handlers.NewHandlers(cfg, db, query, logger.Log)
+	handlers := handlers.NewHandlers(&handlers.Handlers{
+		DB:               db,
+		OpenSearchClient: osc,
+		Query:            query,
+		Logger:           logger.Log,
+		Config:           cfg,
+	})
 
 	router := router.NewRouter(cfg, handlers)
 
@@ -102,13 +121,4 @@ func InitApi(cfg *config.Config) {
 	if err != nil {
 		log.Fatalf("error in starting the server")
 	}
-}
-
-func InitDatabase(url string) *pgxpool.Pool {
-	db, err := database.Init(context.Background(), url)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
-	return db
 }
