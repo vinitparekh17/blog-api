@@ -3,7 +3,6 @@ package openSearchClient
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -43,23 +42,20 @@ func NewOpenSearchClient(osConfig *OpenSearchConfig) (*OpenSearch, error) {
 		RetryOnStatus: []int{502, 503, 504},
 	})
 
-	res, pingErr := client.Ping()
-	if err != nil {
-		return nil, pingErr
-	}
-	defer res.Body.Close()
-
-	logger.Log.Info(fmt.Sprintf("OpenSearch client is connected to %s\nPing response: %s", osConfig.URL, res.Status()))
+	logger.Log.Info("OpenSearch client is connected")
 
 	return &OpenSearch{Client: client}, err
 }
 
-func (o *OpenSearch) SearchQuery(indexName string, query string) (*opensearchapi.Response, error) {
+func (o *OpenSearch) SearchQuery(indexName string, query string, ctx context.Context) (*opensearchapi.Response, error) {
+
+	content := strings.NewReader(query)
 	search := opensearchapi.SearchRequest{
+
 		Index: []string{indexName},
-		Body:  strings.NewReader(query),
+		Body:  content,
 	}
 
-	searchResponse, err := search.Do(context.TODO(), o.Client)
+	searchResponse, err := search.Do(ctx, o.Client)
 	return searchResponse, err
 }

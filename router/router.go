@@ -1,8 +1,11 @@
 package router
 
 import (
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/jay-bhogayata/blogapi/config"
 	"github.com/jay-bhogayata/blogapi/handlers"
@@ -18,6 +21,8 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logging)
+
+	r.Use(httprate.LimitByIP(20, 1*time.Minute))
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -62,6 +67,7 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 			r.With(jwtauth.Verifier(tokenAuth), jwtauth.Authenticator(tokenAuth)).Group(func(r chi.Router) {
 
 				r.Get("/all", h.GetAllArticlesByUser)
+				r.Get("/search", h.SearchArticle)
 				r.Post("/", h.CreateArticle)
 				r.Post("/{id}", h.PublishArticle)
 

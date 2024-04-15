@@ -26,10 +26,11 @@ type Handlers struct {
 
 func NewHandlers(handleConf *Handlers) *Handlers {
 	return &Handlers{
-		DB:     handleConf.DB,
-		Query:  handleConf.Query,
-		Logger: handleConf.Logger,
-		Config: handleConf.Config,
+		DB:               handleConf.DB,
+		OpenSearchClient: handleConf.OpenSearchClient,
+		Query:            handleConf.Query,
+		Logger:           handleConf.Logger,
+		Config:           handleConf.Config,
 	}
 }
 

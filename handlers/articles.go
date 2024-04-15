@@ -128,20 +128,32 @@ func (h *Handlers) CheckUserOwnsArticle(r *http.Request, articleId pgtype.UUID) 
 }
 
 func (h *Handlers) SearchArticle(w http.ResponseWriter, r *http.Request) {
-	searchQuery := r.URL.Query().Get("q")
-	if searchQuery == "" {
-		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload search query is missing")
-		return
-	}
 
-	resp, err := h.OpenSearchClient.SearchQuery("articles", searchQuery)
+	result, err := h.OpenSearchClient.SearchQuery("blog-index",
+		`{
+		"query": {
+			"match": {
+				"title": "c++"
+			}
+		}
+	}`, r.Context())
+
 	if err != nil {
 		h.Logger.Error("Error searching article", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
-	defer resp.Body.Close()
-	h.respondWithJSON(w, http.StatusOK, resp)
+	var searchResult map[string]interface{}
+	decoder := json.NewDecoder(result.Body)
+	err = decoder.Decode(&searchResult)
+
+	if err != nil {
+		h.Logger.Error("Error decoding search result", err)
+	}
+
+	h.respondWithJSON(w, http.StatusOK, searchResult["hits"])
+
+	defer result.Body.Close()
 }
 
 func (h *Handlers) ExtractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
