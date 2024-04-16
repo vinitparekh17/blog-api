@@ -156,7 +156,6 @@ func (h *Handlers) SearchArticle(w http.ResponseWriter, r *http.Request) {
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
-	fmt.Println(openSearchQuery)
 
 	result, err := h.OpenSearchClient.SearchQuery("blog-index", openSearchQuery, r.Context())
 
