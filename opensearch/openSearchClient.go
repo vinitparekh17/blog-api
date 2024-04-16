@@ -3,6 +3,8 @@ package openSearchClient
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -33,7 +35,11 @@ type OpenSearchConfig struct {
 func NewOpenSearchClient(osConfig *OpenSearchConfig) (*OpenSearch, error) {
 	client, err := opensearch.NewClient(opensearch.Config{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: osConfig.Env == "development"},
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: osConfig.Env == "development",
+				Rand:               nil,
+				MinVersion:         tls.VersionTLS12,
+			},
 		},
 		Addresses:     []string{osConfig.URL},
 		Username:      osConfig.UserName,
@@ -58,4 +64,41 @@ func (o *OpenSearch) SearchQuery(indexName string, query string, ctx context.Con
 
 	searchResponse, err := search.Do(ctx, o.Client)
 	return searchResponse, err
+}
+
+func (o *OpenSearch) QueryBuilder(matchType string, fields []string, term string) (string, error) {
+	if len(fields) == 0 {
+		return "", fmt.Errorf("fields cannot be empty")
+	}
+
+	var queryBody map[string]interface{}
+
+	if matchType == "multi" {
+		// For "multi" match
+		queryBody = map[string]interface{}{
+			"query": map[string]interface{}{
+				"multi_match": map[string]interface{}{
+					"query":  term,
+					"fields": fields,
+				},
+			},
+		}
+	} else {
+		// For "single" match (default)
+		queryBody = map[string]interface{}{
+			"query": map[string]interface{}{
+				"match": map[string]interface{}{
+					fields[0]: term,
+				},
+			},
+		}
+	}
+
+	// Convert map to JSON
+	queryJSON, err := json.Marshal(queryBody)
+	if err != nil {
+		return "", err
+	}
+
+	return string(queryJSON), nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
@@ -129,14 +130,35 @@ func (h *Handlers) CheckUserOwnsArticle(r *http.Request, articleId pgtype.UUID) 
 
 func (h *Handlers) SearchArticle(w http.ResponseWriter, r *http.Request) {
 
-	result, err := h.OpenSearchClient.SearchQuery("blog-index",
-		`{
-		"query": {
-			"match": {
-				"title": "c++"
-			}
-		}
-	}`, r.Context())
+	matchType := r.URL.Query().Get("match-type")
+	if matchType == "" {
+		matchType = "single"
+	}
+
+	term := r.URL.Query().Get("term")
+	if term == "" {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid request payload term is missing")
+		return
+	}
+
+	fields := r.URL.Query().Get("fields")
+	var fieldsArr []string
+
+	if fields == "" {
+		fields = "title"
+	}
+
+	fieldsArr = strings.Split(fields, ",")
+
+	openSearchQuery, err := h.OpenSearchClient.QueryBuilder(matchType, fieldsArr, term)
+	if err != nil {
+		h.Logger.Error("Error building search query", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+	fmt.Println(openSearchQuery)
+
+	result, err := h.OpenSearchClient.SearchQuery("blog-index", openSearchQuery, r.Context())
 
 	if err != nil {
 		h.Logger.Error("Error searching article", err)
@@ -149,11 +171,18 @@ func (h *Handlers) SearchArticle(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		h.Logger.Error("Error decoding search result", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error: "+err.Error())
+		return
 	}
 
 	h.respondWithJSON(w, http.StatusOK, searchResult["hits"])
 
-	defer result.Body.Close()
+	err = result.Body.Close()
+	if err != nil {
+		h.Logger.Error("Error closing response body", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error: "+err.Error())
+		return
+	}
 }
 
 func (h *Handlers) ExtractUserIDFromJWT(r *http.Request) (pgtype.UUID, error) {
