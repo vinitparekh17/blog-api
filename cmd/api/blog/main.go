@@ -119,6 +119,6 @@ func InitApi(cfg *config.Config) {
 
 	err := server.Start()
 	if err != nil {
-		log.Fatalf("error in starting the server")
+		log.Fatalf("Error starting server: %v", err)
 	}
 }

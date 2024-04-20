@@ -18,7 +18,7 @@ INSERT INTO articles (title, content, tag_id, user_id) VALUES ($1, $2, $3, $4) R
 type CreateArticleParams struct {
 	Title   string      `json:"title"`
 	Content string      `json:"content"`
-	TagID   pgtype.Int4 `json:"Tag_id"`
+	TagID   pgtype.Int4 `json:"tag_id"`
 	UserID  pgtype.UUID `json:"user_id"`
 }
 
@@ -88,21 +88,30 @@ func (q *Queries) DeleteTag(ctx context.Context, id int32) error {
 	return err
 }
 
-const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM users WHERE user_id = $1
+const deleteUser = `-- name: DeleteUser :one
+DELETE FROM users WHERE user_id = $1 RETURNING user_id
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, userID pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteUser, userID)
-	return err
+func (q *Queries) DeleteUser(ctx context.Context, userID pgtype.UUID) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, deleteUser, userID)
+	var user_id pgtype.UUID
+	err := row.Scan(&user_id)
+	return user_id, err
 }
 
 const getAllArticleByUser = `-- name: GetAllArticleByUser :many
-SELECT a.article_id, a.title, a.content, a.user_id, c.name as Tag_name, a.created_at, a.updated_at, a.is_published
+SELECT a.article_id, a.title, a.content, a.user_id, t.name as Tag_name, a.created_at, a.updated_at, a.is_published
 FROM articles a
-LEFT JOIN Tags c ON a.tag_id = c.id
+LEFT JOIN Tags t ON a.tag_id = t.id
 WHERE a.user_id = $1
+ORDER BY a.created_at DESC
+LIMIT 10 OFFSET $2
 `
+
+type GetAllArticleByUserParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	Offset int32       `json:"offset"`
+}
 
 type GetAllArticleByUserRow struct {
 	ArticleID   pgtype.UUID      `json:"article_id"`
@@ -115,8 +124,8 @@ type GetAllArticleByUserRow struct {
 	IsPublished pgtype.Bool      `json:"is_published"`
 }
 
-func (q *Queries) GetAllArticleByUser(ctx context.Context, userID pgtype.UUID) ([]GetAllArticleByUserRow, error) {
-	rows, err := q.db.Query(ctx, getAllArticleByUser, userID)
+func (q *Queries) GetAllArticleByUser(ctx context.Context, arg GetAllArticleByUserParams) ([]GetAllArticleByUserRow, error) {
+	rows, err := q.db.Query(ctx, getAllArticleByUser, arg.UserID, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -149,6 +158,8 @@ SELECT a.article_id, a.title, a.content, a.user_id, t.name as tag_name, a.create
 FROM articles a
 LEFT JOIN tags t ON a.tag_id = t.id
 WHERE a.is_published = true
+ORDER BY a.created_at DESC
+LIMIT 10 OFFSET $1
 `
 
 type GetAllArticlesRow struct {
@@ -162,8 +173,8 @@ type GetAllArticlesRow struct {
 	IsPublished pgtype.Bool      `json:"is_published"`
 }
 
-func (q *Queries) GetAllArticles(ctx context.Context) ([]GetAllArticlesRow, error) {
-	rows, err := q.db.Query(ctx, getAllArticles)
+func (q *Queries) GetAllArticles(ctx context.Context, offset int32) ([]GetAllArticlesRow, error) {
+	rows, err := q.db.Query(ctx, getAllArticles, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -181,30 +192,6 @@ func (q *Queries) GetAllArticles(ctx context.Context) ([]GetAllArticlesRow, erro
 			&i.UpdatedAt,
 			&i.IsPublished,
 		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getAllTags = `-- name: GetAllTags :many
-SELECT id, name FROM tags
-`
-
-func (q *Queries) GetAllTags(ctx context.Context) ([]Tag, error) {
-	rows, err := q.db.Query(ctx, getAllTags)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Tag
-	for rows.Next() {
-		var i Tag
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -260,6 +247,30 @@ func (q *Queries) GetTagById(ctx context.Context, id int32) (Tag, error) {
 	var i Tag
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
+}
+
+const getTags = `-- name: GetTags :many
+SELECT id, name FROM tags
+`
+
+func (q *Queries) GetTags(ctx context.Context) ([]Tag, error) {
+	rows, err := q.db.Query(ctx, getTags)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Tag
+	for rows.Next() {
+		var i Tag
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one

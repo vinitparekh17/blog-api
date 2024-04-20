@@ -21,8 +21,7 @@ func Init(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
-	logger.Log.Info("connected to database successfully")
-
+	logger.Log.Info("PostgreSQL Connected!")
 	return pool, err
 
 }
