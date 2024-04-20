@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -31,6 +32,8 @@ func (h *Handlers) CreateArticle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	article.UserID = userID
+
+	fmt.Println(article)
 
 	res, err := h.Query.CreateArticle(ctx, article)
 	if err != nil {
@@ -81,9 +84,25 @@ func (h *Handlers) PublishArticle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) GetAllArticles(w http.ResponseWriter, r *http.Request) {
-	articles, err := h.Query.GetAllArticles(r.Context())
+	pageNo, err := strconv.ParseInt(r.URL.Query().Get("page"), 10, 32)
+
+	if pageNo == 0 || err != nil {
+		pageNo = 1
+	} else if pageNo < 0 {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid page number")
+		return
+	}
+
+	offset := (pageNo - 1) * 10
+
+	articles, err := h.Query.GetAllArticles(r.Context(), int32(offset))
 	if err != nil {
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	if len(articles) == 0 {
+		h.respondWithJSON(w, http.StatusOK, []database.Article{})
 		return
 	}
 
@@ -98,12 +117,30 @@ func (h *Handlers) GetAllArticlesByUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	articles, err := h.Query.GetAllArticleByUser(r.Context(), userID)
+	pageNo, err := strconv.ParseInt(r.URL.Query().Get("page"), 10, 32)
+	if pageNo == 0 || err != nil {
+		pageNo = 1
+	} else if pageNo < 0 {
+		h.respondWithError(w, http.StatusBadRequest, "Invalid page number")
+		return
+	}
+
+	offSet := (pageNo - 1) * 10
+
+	articles, err := h.Query.GetAllArticleByUser(r.Context(), database.GetAllArticleByUserParams{
+		UserID: userID,
+		Offset: int32(offSet),
+	})
+
 	if err != nil {
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
+	if len(articles) == 0 {
+		h.respondWithJSON(w, http.StatusOK, []database.Article{})
+		return
+	}
 	h.respondWithJSON(w, http.StatusOK, articles)
 }
 
@@ -174,7 +211,7 @@ func (h *Handlers) SearchArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.respondWithJSON(w, http.StatusOK, searchResult["hits"])
+	h.respondWithJSON(w, http.StatusOK, searchResult)
 
 	err = result.Body.Close()
 	if err != nil {

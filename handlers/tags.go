@@ -18,7 +18,7 @@ type Tag struct {
 }
 
 func (h *Handlers) GetAllTags(w http.ResponseWriter, r *http.Request) {
-	Tags, err := h.Query.GetAllTags(r.Context())
+	Tags, err := h.Query.GetTags(r.Context())
 	if err != nil {
 		h.Logger.Error("error while fetching Tags: ", "error", err.Error())
 		h.respondWithError(w, http.StatusInternalServerError, "error while fetching Tags")
