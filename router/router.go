@@ -48,14 +48,19 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 			r.Get("/", h.GetAllTags)
 			r.Get("/{id}", h.GetTagByID)
 		})
-		r.Route("/accounts", func(r chi.Router) {
+		r.Route("/user", func(r chi.Router) {
+
 			r.Post("/register", h.RegisterUser)
 			r.Get("/verify", h.VerifyUser)
 			r.Post("/login", h.LoginUser)
-			r.Get("/user/{mail}", h.GetUserInfoByUserEmail)
+			r.Get("/{mail}", h.GetUserInfoByUserEmail)
+
 			r.With(jwtauth.Verifier(tokenAuth), jwtauth.Authenticator(tokenAuth)).Group(func(r chi.Router) {
+
 				r.Post("/logout", h.LogoutUser)
 				r.Get("/users", h.GetAllUsers)
+				r.Delete("/delete", h.DeleteUser)
+
 			})
 
 		})
@@ -63,11 +68,11 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 		r.Route("/article", func(r chi.Router) {
 
 			r.Get("/", h.GetAllArticles)
+			r.Get("/search", h.SearchArticle)
 
 			r.With(jwtauth.Verifier(tokenAuth), jwtauth.Authenticator(tokenAuth)).Group(func(r chi.Router) {
 
 				r.Get("/all", h.GetAllArticlesByUser)
-				r.Get("/search", h.SearchArticle)
 				r.Post("/", h.CreateArticle)
 				r.Post("/{id}", h.PublishArticle)
 
