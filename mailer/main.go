@@ -11,9 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ses/types"
 )
 
-func SendEmail(dest string, subject string, body string) error {
-
-	sender := "jaybhogayata53@gmail.com"
+func SendEmail(dest string, subject string, body string, sender string) error {
 
 	cfg, err := awsconfig.LoadDefaultConfig(context.TODO())
 
