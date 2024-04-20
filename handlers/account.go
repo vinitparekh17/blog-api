@@ -30,9 +30,9 @@ type Response struct {
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	type ReqUser struct {
-		UserName string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		UserName string `json:"username" required:"true"`
+		Email    string `json:"email" required:"true"`
+		Password string `json:"password" required:"true"`
 	}
 	u := ReqUser{}
 
@@ -68,8 +68,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	usr, err := h.Query.CreateUser(r.Context(), database.CreateUserParams{Username: u.UserName, Email: u.Email, PasswordHash: hash, IsVerified: pgtype.Bool{Bool: false, Valid: true}, VerificationToken: pgtype.Text{String: token, Valid: true}})
 	if err != nil {
 
-		errStr := strings.Contains(err.Error(), "duplicate key") && strings.Contains(err.Error(), "users_email_key")
-		if errStr {
+		if strings.Contains(err.Error(), "duplicate key") && strings.Contains(err.Error(), "users_email_key") {
 			h.respondWithError(w, http.StatusBadRequest, "email is already taken try to register with different email")
 			return
 		}
@@ -87,7 +86,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = mailer.SendEmail(usr.Email, "Account Verification", body)
+	err = mailer.SendEmail(usr.Email, "Account Verification", body, h.Config.EmailSender)
 	if err != nil {
 		h.Logger.Error("error in sending email to", usr.Email, err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
@@ -140,14 +139,23 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 
 	usr, err := h.Query.GetUserByEmail(r.Context(), u.Email)
 	if err != nil {
-		fmt.Println("err", err)
+		if strings.Contains(err.Error(), "no rows in result set") {
+			h.respondWithError(w, http.StatusUnauthorized, "User with this email does not exist")
+			return
+		}
+		h.Logger.Error("error in getting user by email", "error", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	if !usr.IsVerified.Bool {
+		h.respondWithError(w, http.StatusUnauthorized, "User is not verified")
 		return
 	}
 
 	match, err := argon2id.ComparePasswordAndHash(u.Password, usr.PasswordHash)
 	if err != nil {
-		fmt.Println("err", err)
+		fmt.Println(err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
@@ -225,4 +233,29 @@ func (h *Handlers) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(res)
+}
+
+func (h *Handlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
+
+	userID, err := h.ExtractUserIDFromJWT(r)
+
+	if err != nil {
+		h.Logger.Error("Error extracting user ID from JWT", err)
+		h.respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	_, err = h.Query.DeleteUser(r.Context(), userID)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			h.respondWithError(w, http.StatusNotFound, "User with this ID does not exist")
+			return
+		}
+		h.Logger.Error(err.Error())
+		h.respondWithError(w, http.StatusInternalServerError, "error while deleting user")
+		return
+	}
+
+	h.respondWithJSON(w, http.StatusOK, "User has been deleted")
 }
