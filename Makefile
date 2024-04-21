@@ -63,8 +63,8 @@ build:
 
 ## run: run the application
 .PHONY: run
-run:
-	go run ${MAIN_PACKAGE_PATH} 1
+run: build
+	/tmp/bin/${BINARY_NAME}
 
 ## run/live: run the application with reloading on file changes
 .PHONY: run/live

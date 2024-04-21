@@ -7,13 +7,13 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jay-bhogayata/blogapi/config"
-	"github.com/jay-bhogayata/blogapi/database"
-	"github.com/jay-bhogayata/blogapi/handlers"
-	"github.com/jay-bhogayata/blogapi/logger"
-	openSearchClient "github.com/jay-bhogayata/blogapi/opensearch"
-	"github.com/jay-bhogayata/blogapi/router"
-	"github.com/jay-bhogayata/blogapi/server"
+	"github.com/jay-bhogayata/blogapi/internal/config"
+	"github.com/jay-bhogayata/blogapi/internal/database"
+	"github.com/jay-bhogayata/blogapi/internal/handlers"
+	"github.com/jay-bhogayata/blogapi/internal/logger"
+	openSearchClient "github.com/jay-bhogayata/blogapi/internal/opensearch"
+	"github.com/jay-bhogayata/blogapi/internal/router"
+	"github.com/jay-bhogayata/blogapi/internal/server"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -29,20 +29,14 @@ func main() {
 		return
 	}
 
-	if len(os.Args) <= 1 {
-		logger.Log.Info("Arguments not found")
-		logger.Log.Info("Starting blog API as per default choice...")
+	if len(os.Args) == 1 {
 		InitApi(cfg)
+		return
 	}
 
 	choice, err := strconv.Atoi(os.Args[1:][0])
 	if err != nil {
-		fmt.Println(`
-1. Start Blog API
-2. Migration UP
-3. Migration Down
-
-Invalid Argument, Choose between 1 to 3`)
+		MigrationOption()
 		return
 	}
 
@@ -50,9 +44,6 @@ Invalid Argument, Choose between 1 to 3`)
 		switch choice {
 
 		case 1:
-			InitApi(cfg)
-
-		case 2:
 			m, err := migrate.New("file://migrations", cfg.Database.DBURL)
 			if err != nil {
 				logger.Log.Error(err.Error())
@@ -64,7 +55,7 @@ Invalid Argument, Choose between 1 to 3`)
 			}
 			return
 
-		case 3:
+		case 2:
 			m, err := migrate.New("file://migrations", cfg.Database.DBURL)
 			if err != nil {
 				logger.Log.Error(err.Error())
@@ -76,14 +67,19 @@ Invalid Argument, Choose between 1 to 3`)
 			}
 			return
 
-		case 4:
-			return
-
 		default:
-			logger.Log.Warn("Invalid choice")
+			MigrationOption()
 			return
 		}
 	}
+}
+
+func MigrationOption() {
+	logger.Log.Info("____________________________________________________\n")
+	logger.Log.Info("Please provide valid input\n")
+	logger.Log.Info("1. Migrate Up")
+	logger.Log.Info("2. Migrate Down")
+	logger.Log.Info("____________________________________________________")
 }
 
 func InitApi(cfg *config.Config) {
