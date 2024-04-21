@@ -39,7 +39,7 @@ UPDATE users SET is_verified = true, verification_token = null , updated_at = no
 
 
 -- name: CreateArticle :one
-INSERT INTO articles (title, content, tag_id, user_id) VALUES ($1, $2, $3, $4) RETURNING article_id;
+INSERT INTO articles (title, content, tag_id, user_id,is_published) VALUES ($1, $2, $3, $4,true) RETURNING article_id;
 
 -- name: PublishArticle :exec
 UPDATE articles SET is_published = true, updated_at = now() WHERE article_id = $1;
