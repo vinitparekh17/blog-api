@@ -12,3 +12,24 @@ This is a simple blog backend that allows you to create, read, update and delete
 - sqlc 1.25.0 and above
 - golang-migrate 4.17.0 and above
 
+## Sqlc
+
+```bash
+# Docker recommended
+docker run --rm -v $(pwd):/src -w /src sqlc/sqlc generate
+```
+or
+
+Visit [sqlc](https://sqlc.dev/docs/install) to install sqlc
+
+## Usage
+
+```bash
+go run cmd/api/blog/main.go [option]
+# [option] = 1, 2, 3
+
+# 1: Start blog server
+# 2: Database migration-up
+# 3: Database migration-down
+
+```
