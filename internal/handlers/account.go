@@ -12,9 +12,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jay-bhogayata/blogapi/database"
+	"github.com/jay-bhogayata/blogapi/internal/database"
 	"github.com/jay-bhogayata/blogapi/internal/helper"
-	"github.com/jay-bhogayata/blogapi/mailer"
+	"github.com/jay-bhogayata/blogapi/internal/mailer"
 )
 
 type User struct {

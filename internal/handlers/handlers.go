@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jay-bhogayata/blogapi/config"
-	"github.com/jay-bhogayata/blogapi/database"
-	openSearchClient "github.com/jay-bhogayata/blogapi/opensearch"
+	"github.com/jay-bhogayata/blogapi/internal/config"
+	"github.com/jay-bhogayata/blogapi/internal/database"
+	openSearchClient "github.com/jay-bhogayata/blogapi/internal/opensearch"
 )
 
 type DB interface {

@@ -12,7 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jay-bhogayata/blogapi/database"
+	"github.com/jay-bhogayata/blogapi/internal/database"
 )
 
 func (h *Handlers) CreateArticle(w http.ResponseWriter, r *http.Request) {

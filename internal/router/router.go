@@ -7,9 +7,9 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-chi/httprate"
 	"github.com/go-chi/jwtauth/v5"
-	"github.com/jay-bhogayata/blogapi/config"
-	"github.com/jay-bhogayata/blogapi/handlers"
-	"github.com/jay-bhogayata/blogapi/middleware"
+	"github.com/jay-bhogayata/blogapi/internal/config"
+	"github.com/jay-bhogayata/blogapi/internal/handlers"
+	"github.com/jay-bhogayata/blogapi/internal/middleware"
 )
 
 var tokenAuth *jwtauth.JWTAuth

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jay-bhogayata/blogapi/config"
-	"github.com/jay-bhogayata/blogapi/logger"
+	"github.com/jay-bhogayata/blogapi/internal/config"
+	"github.com/jay-bhogayata/blogapi/internal/logger"
 )
 
 type Server struct {

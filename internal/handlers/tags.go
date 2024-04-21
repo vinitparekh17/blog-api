@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jay-bhogayata/blogapi/database"
+	"github.com/jay-bhogayata/blogapi/internal/database"
 )
 
 type ErrorResponse struct {

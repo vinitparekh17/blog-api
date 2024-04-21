@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/jay-bhogayata/blogapi/logger"
+	"github.com/jay-bhogayata/blogapi/internal/logger"
 	"github.com/stretchr/testify/assert"
 )
 

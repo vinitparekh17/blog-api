@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jay-bhogayata/blogapi/logger"
+	"github.com/jay-bhogayata/blogapi/internal/logger"
 )
 
 func Init(ctx context.Context, url string) (*pgxpool.Pool, error) {

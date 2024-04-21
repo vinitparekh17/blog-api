@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jay-bhogayata/blogapi/logger"
+	"github.com/jay-bhogayata/blogapi/internal/logger"
 )
 
 type statusTrackingResponseWriter struct {
