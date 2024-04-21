@@ -78,7 +78,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	activationLink := fmt.Sprintf("http://%s/api/v1/accounts/verify?token=%s", r.Host, token)
+	activationLink := fmt.Sprintf("http://%s/api/v1/users/verify?token=%s", r.Host, token)
 	body, err := mailer.SetupVerificationTemplate(usr.Username, activationLink)
 	if err != nil {
 		h.Logger.Error("error in setting verification template", err)

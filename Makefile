@@ -92,9 +92,9 @@ db-stop:
 ## migrate: run migrations
 .PHONY: migrate
 migrate-up:
-	migrate -path ./migrations -database ${POSTGRES_URL} up
+	migrate -path ./internal/migrations -database ${POSTGRES_URL} up
 migrate-down:
-	migrate -path ./migrations -database ${POSTGRES_URL} down
+	migrate -path ./internal/migrations -database ${POSTGRES_URL} down
 
 # ==================================================================================== #
 # sqlc
