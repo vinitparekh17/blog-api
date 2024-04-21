@@ -1,16 +1,16 @@
 # BinaryBlog
-
-<img src="https://img.shields.io/github/go-mod/go-version/jay-bhogayata/blog" alt="Go Version"/>
-<img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"/>
-<img src="https://img.shields.io/github/last-commit/jay-bhogayata/blog" alt="Last Commit"/>
-<img src="https://img.shields.io/github/issues/jay-bhogayata/blog" alt="Issues"/>
-<img src="https://img.shields.io/github/stars/jay-bhogayata/blog" alt="Stars"/>
+  
+![Go Version](https://img.shields.io/github/go-mod/go-version/jay-bhogayata/blog)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Last Commit](https://img.shields.io/github/last-commit/jay-bhogayata/blog)
+![Issues](https://img.shields.io/github/issues/jay-bhogayata/blog)
+![Stars](https://img.shields.io/github/stars/jay-bhogayata/blog)
 
 <br/>
 
-<center>
-<img src="./images/logo.jpeg" alt="BinaryBlog" width="200"/>
-</center>
+<div align="center">
+<img src="./images/logo.jpeg" alt="BinaryBlog" width="200" height="200"/>
+</div>
 
 ## Description
 
