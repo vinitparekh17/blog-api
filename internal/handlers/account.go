@@ -30,9 +30,9 @@ type Response struct {
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	type ReqUser struct {
-		UserName string `json:"username" required:"true"`
-		Email    string `json:"email" required:"true"`
-		Password string `json:"password" required:"true"`
+		UserName string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	u := ReqUser{}
 
@@ -51,7 +51,19 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hash, err := argon2id.CreateHash(u.Password, argon2id.DefaultParams)
+	if u.UserName == "" || u.Email == "" || u.Password == "" {
+		h.respondWithError(w, http.StatusBadRequest, "username, email and password are required")
+		return
+	}
+
+	hash, err := argon2id.CreateHash(u.Password, &argon2id.Params{
+		Memory:      128 * 1024,
+		Iterations:  4,
+		Parallelism: 4,
+		SaltLength:  64,
+		KeyLength:   32,
+	})
+
 	if err != nil {
 		h.Logger.Error("error in hashing the password", "error:", err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
@@ -137,6 +149,11 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if u.Email == "" || u.Password == "" {
+		h.respondWithError(w, http.StatusBadRequest, "email and password are required")
+		return
+	}
+
 	usr, err := h.Query.GetUserByEmail(r.Context(), u.Email)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
@@ -188,15 +205,7 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) LogoutUser(w http.ResponseWriter, r *http.Request) {
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Expires:  time.Unix(0, 0),
-	})
-
+	helper.ClearCookie(w)
 	h.respondWithJSON(w, http.StatusOK, &Response{Message: "Logged out successfully"})
 }
 
@@ -256,6 +265,6 @@ func (h *Handlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		h.respondWithError(w, http.StatusInternalServerError, "error while deleting user")
 		return
 	}
-
+	helper.ClearCookie(w)
 	h.respondWithJSON(w, http.StatusOK, "User has been deleted")
 }
