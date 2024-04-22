@@ -58,7 +58,7 @@ func NewRouter(cfg *config.Config, h *handlers.Handlers) *chi.Mux {
 			r.Get("/", h.GetAllUsers)
 			r.With(jwtauth.Verifier(tokenAuth), jwtauth.Authenticator(tokenAuth)).Group(func(r chi.Router) {
 				r.Get("/posts", h.GetAllArticlesByUser)
-				r.Get("/logout", h.LogoutUser)
+				r.Post("/logout", h.LogoutUser)
 				r.Delete("/delete", h.DeleteUser)
 
 			})
