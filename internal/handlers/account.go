@@ -30,9 +30,9 @@ type Response struct {
 func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 	type ReqUser struct {
-		UserName string `json:"username" validate:"required"`
-		Email    string `json:"email" validate:"required,email"`
-		Password string `json:"password" validate:"required"`
+		UserName string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	u := ReqUser{}
 
@@ -50,7 +50,7 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if u.Email == "" || u.Password == "" || u.UserName == "" {
+	if u.UserName == "" || u.Email == "" || u.Password == "" {
 		h.respondWithError(w, http.StatusBadRequest, "username, email and password are required")
 		return
 	}
@@ -204,7 +204,7 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) LogoutUser(w http.ResponseWriter, r *http.Request) {
-	clearCookie(w)
+	helper.ClearCookie(w)
 	h.respondWithJSON(w, http.StatusOK, &Response{Message: "Logged out successfully"})
 }
 
@@ -264,19 +264,7 @@ func (h *Handlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		h.respondWithError(w, http.StatusInternalServerError, "error while deleting user")
 		return
 	}
-
-	clearCookie(w)
+	helper.ClearCookie(w)
 	h.respondWithJSON(w, http.StatusOK, "User has been deleted")
 
-}
-
-func clearCookie(w http.ResponseWriter) {
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "jwt",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Expires:  time.Unix(0, 0),
-	})
 }
