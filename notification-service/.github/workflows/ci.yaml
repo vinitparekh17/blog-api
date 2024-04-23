@@ -1,0 +1,76 @@
+name: ci workflow
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+   
+env:
+  GAR_REPO : ${{ secrets.GAR_REPO }}
+  IMAGE_NAME : ${{ secrets.IMAGE_NAME }}
+  TAG : ${{ github.sha }}
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+
+
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+
+      - name: "Setup Go"
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21.5
+          
+      - name: "Install dependencies"
+        run: go get .
+      
+      - name: "Run go test"
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./... 
+
+      - name: "Run Go Vet"
+        run: go vet ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      
+      - id: "auth"
+        if : github.event_name == 'push' || github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json : ${{ secrets.GCP_SA_KEY }}            
+          
+      - name: 'Set up Cloud SDK'
+        if : github.event_name == 'push' || github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+        uses: 'google-github-actions/setup-gcloud@v1'
+          
+      - name: 'Use gcloud CLI'
+        if : github.event_name == 'push' || github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+        run: 'gcloud info'
+      
+      - name: "build and push"
+        if : github.event_name == 'push' || github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+        env:
+          GOOGLE_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          gcloud auth configure-docker asia-south1-docker.pkg.dev
+          docker build -t ${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ env.TAG }} .
+          docker push ${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
+      
+      - name: Update Kubernetes manifests
+        if : github.event_name == 'push' || github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+        run: |
+          git clone https://jay-bhogayata:${{ secrets.PAT }}@github.com/jay-bhogayata/deployment-stuff.git
+          cd deployment-stuff
+          git remote set-url origin https://jay-bhogayata:${{ secrets.PAT }}@github.com/jay-bhogayata/deployment-stuff.git        
+          sed -i "s|image: asia-south1-docker.pkg.dev/mymicroserviceproj/mycontainersstore/notifyhub:.*|image: asia-south1-docker.pkg.dev/mymicroserviceproj/mycontainersstore/notifyhub:${{ env.TAG }}|g" notifyhub/deployment.yaml
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Update notifyhub image to ${{ env.TAG }}"
+          git push origin main
