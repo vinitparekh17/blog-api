@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option go_package = "github.com/jay-bhogayata/blogapi";
+
+package notification;
+
+service NotificationService {
+    rpc SendEmail(EmailRequest) returns (EmailResponse) {}
+    rpc SendSMS(SMSRequest) returns (SMSResponse) {}
+}
+
+message EmailRequest {
+    string to = 1;
+    string subject = 2;
+    string body = 3;
+}
+
+message EmailResponse {
+    bool status = 1;
+    string message = 2;
+}
+
+message SMSRequest {
+    string to = 1;
+    string message = 2;
+}
+
+message SMSResponse {
+    bool status = 1;
+    string message = 2;
+}
