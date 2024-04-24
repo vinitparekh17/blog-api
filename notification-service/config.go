@@ -60,7 +60,7 @@ func (c *config) ConfigAws() {
 	var cfg aws.Config
 	var err error
 
-	if c.env == "dev" {
+	if c.env == "test" {
 		cfg, err = c.ConfigLocalAws()
 		if err != nil {
 			log.Fatal(err.Error())

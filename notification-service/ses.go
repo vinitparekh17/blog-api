@@ -56,7 +56,7 @@ func (app *application) SendEmail(ctx context.Context, req *pb.EmailRequest) (*p
 		},
 		Message: &types.Message{
 			Body: &types.Body{
-				Text: &types.Content{
+				Html: &types.Content{
 					Data: &req.Body,
 				},
 			},
@@ -67,7 +67,7 @@ func (app *application) SendEmail(ctx context.Context, req *pb.EmailRequest) (*p
 		Source: &app.config.sender_email,
 	}
 
-	_, err := service.SendEmail(context.Background(), input)
+	_, err := service.SendEmail(ctx, input)
 	if err != nil {
 		logger.Error("could not send email", "error", err)
 		return nil, err
