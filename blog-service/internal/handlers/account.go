@@ -97,10 +97,11 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = mailer.SendEmail(usr.Email, "Account Verification", body, h.Config.EmailSender)
+	err = mailer.SendEmail(r.Context(), usr.Email, "Account Verification", body, h.Config.EmailSender)
 	if err != nil {
 		h.Logger.Error("error in sending email to", usr.Email, err)
 		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		h.Query.DeleteUser(r.Context(), usr.UserID)
 		return
 	}
 
@@ -131,6 +132,34 @@ func (h *Handlers) VerifyUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(`<html><body><h1>Account Verified</h1></body></html>`))
+}
+
+func (h *Handlers) ResendVerificationEmail(w http.ResponseWriter, r *http.Request) {
+
+	type UserMail struct {
+		Email string `json:"email"`
+	}
+
+	var user UserMail
+
+	err := helper.DecodeJSONBody(w, r, &user)
+	if err != nil {
+		h.Logger.Error("error in decoding json body", "error", err)
+		h.respondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	existingUser, err := h.Query.GetUserByEmail(r.Context(), user.Email)
+	if err != nil {
+		h.Logger.Error("error in getting user by email", "error", err)
+		h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	if existingUser.IsVerified.Bool {
+		h.respondWithError(w, http.StatusBadRequest, "User is already verified")
+		return
+	}
 }
 
 func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {

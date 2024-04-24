@@ -27,10 +27,7 @@ type Config struct {
 }
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
+	godotenv.Load()
 }
 
 func LoadConfig() (*Config, error) {
@@ -59,11 +56,6 @@ func LoadConfig() (*Config, error) {
 	cfg.JWTSecret = os.Getenv("JWT_SECRET")
 	if cfg.JWTSecret == "" {
 		return nil, errors.New("JWT_SECRET env not found")
-	}
-
-	cfg.EmailSender = os.Getenv("MAILER_SENDER")
-	if cfg.EmailSender == "" {
-		return nil, errors.New("MAILER_SENDER env not found")
 	}
 
 	cfg.Server.Port = os.Getenv("SERVER_PORT")

@@ -4,26 +4,26 @@ import (
 	"bytes"
 	"context"
 	"html/template"
-	"time"
 
 	"github.com/jay-bhogayata/blogapi/internal/logger"
 	pb "github.com/jay-bhogayata/blogapi/internal/pb"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-func SendEmail(dest string, subject string, body string, sender string) error {
-	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(
-		credentials.NewClientTLSFromCert(nil, ""),
-	))
+func SendEmail(ctx context.Context, dest string, subject string, body string, sender string) error {
+
+	conn, err := grpc.Dial(
+		"localhost:50051",
+		grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
 		logger.Log.Error("could not connect to notification service", "error", err)
 	}
 	defer conn.Close()
 
 	grcpClient := pb.NewNotificationServiceClient(conn)
-	ctx, cancle := context.WithTimeout(context.Background(), time.Second)
-	defer cancle()
 
 	_, err = grcpClient.SendEmail(ctx, &pb.EmailRequest{
 		To:      dest,
