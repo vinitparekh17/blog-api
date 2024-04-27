@@ -9,11 +9,10 @@ import (
 
 	"github.com/jay-bhogayata/blogapi/internal/config"
 	"github.com/jay-bhogayata/blogapi/internal/database"
-	"github.com/jay-bhogayata/blogapi/internal/handlers"
 	"github.com/jay-bhogayata/blogapi/internal/logger"
 	openSearchClient "github.com/jay-bhogayata/blogapi/internal/opensearch"
-	"github.com/jay-bhogayata/blogapi/internal/router"
 	"github.com/jay-bhogayata/blogapi/internal/server"
+	"github.com/jay-bhogayata/blogapi/internal/store"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -101,7 +100,7 @@ func InitApi(cfg *config.Config) {
 
 	query := database.New(db)
 
-	handlers := handlers.NewHandlers(&handlers.Handlers{
+	store.UseBlogStore(&store.BlogStoreType{
 		DB:               db,
 		OpenSearchClient: osc,
 		Query:            query,
@@ -109,12 +108,5 @@ func InitApi(cfg *config.Config) {
 		Config:           cfg,
 	})
 
-	router := router.NewRouter(cfg, handlers)
-
-	server := server.NewServer(cfg, router)
-
-	err := server.Start()
-	if err != nil {
-		log.Fatalf("Error starting server: %v", err)
-	}
+	server.UseGRPCServer()
 }

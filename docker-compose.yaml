@@ -5,8 +5,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DATABASE_URL=postgres://postgres:i8o9LdK5ymkI0zOwCXRl@blog-api.cdab5nnqlfzf.ap-south-1.rds.amazonaws.com/blog
-      - OPENSEARCH_URL=https://search-blog-api-hkoqsbkzu75oerecllb6meixgq.aos.ap-south-1.on.aws
+      - DATABASE_URL=postgres://postgres:pg123@postgres:5432/blog
+      - OPENSEARCH_URL=http://opensearch-node1:9200
       - OPENSEARCH_USERNAME=admin
       - OPENSEARCH_PASSWORD=qwrt123@455yU00T
       - JWT_SECRET=secret
@@ -18,6 +18,7 @@ services:
     depends_on:
       - postgres
       - notification-service
+      - opensearch-node1
   
   notification-service:
     build: ./notification-service
@@ -55,7 +56,7 @@ services:
       - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2 
       - bootstrap.memory_lock=true
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=qwrt123@455yU00T
     ulimits:
       memlock:
         soft: -1 
@@ -70,28 +71,28 @@ services:
       - 9600:9600 
     networks:
       - blog-net 
-  opensearch-node2:
-    image: opensearchproject/opensearch:latest 
-    container_name: opensearch-node2
-    environment:
-      - cluster.name=opensearch-cluster
-      - node.name=opensearch-node2
-      - discovery.seed_hosts=opensearch-node1,opensearch-node2
-      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
-      - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    volumes:
-      - opensearch-data2:/usr/share/opensearch/data
-    networks:
-      - blog-net
+  # opensearch-node2:
+    # image: opensearchproject/opensearch:latest 
+    # container_name: opensearch-node2
+    # environment:
+    #   - cluster.name=opensearch-cluster
+    #   - node.name=opensearch-node2
+    #   - discovery.seed_hosts=opensearch-node1,opensearch-node2
+    #   - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+    #   - bootstrap.memory_lock=true
+    #   - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    #   - OPENSEARCH_INITIAL_ADMIN_PASSWORD=qwrt123@455yU00T
+    # ulimits:
+    #   memlock:
+    #     soft: -1
+    #     hard: -1
+    #   nofile:
+    #     soft: 65536
+    #     hard: 65536
+    # volumes:
+    #   - opensearch-data2:/usr/share/opensearch/data
+    # networks:
+    #   - blog-net
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest 
     container_name: opensearch-dashboards
@@ -100,7 +101,7 @@ services:
     expose:
       - "5601" 
     environment:
-      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]' 
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200"]' 
     networks:
       - blog-net
 

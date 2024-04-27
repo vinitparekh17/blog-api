@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/jay-bhogayata/blogapi";
+option go_package = "github.com/jay-bhogayata/blog-api/internal/pb/notificationservice;notificationservice";
 
 package notification;
 

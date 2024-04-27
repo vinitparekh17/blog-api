@@ -6,7 +6,7 @@ import (
 	"html/template"
 
 	"github.com/jay-bhogayata/blogapi/internal/logger"
-	pb "github.com/jay-bhogayata/blogapi/internal/pb"
+	"github.com/jay-bhogayata/blogapi/internal/pb/notificationservice"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -23,9 +23,9 @@ func SendEmail(ctx context.Context, dest string, subject string, body string, se
 	}
 	defer conn.Close()
 
-	grcpClient := pb.NewNotificationServiceClient(conn)
+	grcpClient := notificationservice.NewNotificationServiceClient(conn)
 
-	_, err = grcpClient.SendEmail(ctx, &pb.EmailRequest{
+	_, err = grcpClient.SendEmail(ctx, &notificationservice.EmailRequest{
 		To:      dest,
 		Subject: subject,
 		Body:    body,

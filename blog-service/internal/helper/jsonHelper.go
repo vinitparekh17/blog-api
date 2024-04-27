@@ -18,7 +18,7 @@ func (mr *MalformedRequest) Error() string {
 	return mr.Msg
 }
 
-func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
+func DecodeJSONBody[T comparable](w http.ResponseWriter, r *http.Request, dst T) error {
 	ct := r.Header.Get("Content-Type")
 	if ct != "" {
 		mediaType := strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))

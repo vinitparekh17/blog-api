@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+option go_package = "github.com/jay-bhogayata/blog-api/internal/pb/blogservice;blogservice";
+
+package blogservice;
+
+service BlogService {
+    rpc ListBlog(Void) returns (ListBlogResponse);
+    rpc CreateBlog(BlogPayload) returns (BlogId);
+    rpc GetBlog(BlogId) returns (BlogPayload);
+    rpc UpdateBlog(BlogPayload) returns (BlogPayload);
+    rpc DeleteBlog(BlogId) returns (BlogId);
+
+    rpc CreateBlogTag(BlogTagPayload) returns (BlogTagPayload);
+    rpc ListBlogTag(Void) returns (ListBlogTagResponse);
+    rpc GetBlogTag(BlogTagId) returns (BlogTagPayload);
+    rpc UpdateBlogTag(BlogTagPayload) returns (BlogTagPayload);
+    rpc DeleteBlogTag(BlogTagId) returns (BlogTagId);
+}
+
+message Void {}
+
+message Blog {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+    string author_id = 4;
+    int32 tag_id = 5;
+    int64 created_at = 6;
+    int64 updated_at = 7;
+    bool is_published = 8;
+}
+
+message ListBlogResponse {
+    repeated Blog blog = 1;
+}
+
+message ListBlogRequest {
+    int32 pageNumber = 1;
+}
+
+message BlogId {
+    string id = 1;
+}
+message BlogPayload {
+    Blog blog = 1;
+}
+
+message BlogResponse {
+    Blog blog = 1;
+}
+
+message BlogTag {
+    string id = 1;
+    string name = 2;
+}
+
+message ListBlogTagResponse {
+    repeated BlogTag blog_tag = 1;
+}
+
+message BlogTagId {
+    string id = 1;
+}
+
+message BlogTagPayload {
+    BlogTag blog_tag = 1;
+}
