@@ -27,10 +27,10 @@ type BlogServiceClient interface {
 	GetBlog(ctx context.Context, in *BlogId, opts ...grpc.CallOption) (*BlogPayload, error)
 	UpdateBlog(ctx context.Context, in *BlogPayload, opts ...grpc.CallOption) (*BlogPayload, error)
 	DeleteBlog(ctx context.Context, in *BlogId, opts ...grpc.CallOption) (*BlogId, error)
-	CreateBlogTag(ctx context.Context, in *BlogTagPayload, opts ...grpc.CallOption) (*BlogTagPayload, error)
+	CreateBlogTag(ctx context.Context, in *BlogTag, opts ...grpc.CallOption) (*BlogTag, error)
 	ListBlogTag(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ListBlogTagResponse, error)
-	GetBlogTag(ctx context.Context, in *BlogTagId, opts ...grpc.CallOption) (*BlogTagPayload, error)
-	UpdateBlogTag(ctx context.Context, in *BlogTagPayload, opts ...grpc.CallOption) (*BlogTagPayload, error)
+	GetBlogTag(ctx context.Context, in *BlogTagId, opts ...grpc.CallOption) (*BlogTag, error)
+	UpdateBlogTag(ctx context.Context, in *BlogTag, opts ...grpc.CallOption) (*BlogTag, error)
 	DeleteBlogTag(ctx context.Context, in *BlogTagId, opts ...grpc.CallOption) (*BlogTagId, error)
 }
 
@@ -87,8 +87,8 @@ func (c *blogServiceClient) DeleteBlog(ctx context.Context, in *BlogId, opts ...
 	return out, nil
 }
 
-func (c *blogServiceClient) CreateBlogTag(ctx context.Context, in *BlogTagPayload, opts ...grpc.CallOption) (*BlogTagPayload, error) {
-	out := new(BlogTagPayload)
+func (c *blogServiceClient) CreateBlogTag(ctx context.Context, in *BlogTag, opts ...grpc.CallOption) (*BlogTag, error) {
+	out := new(BlogTag)
 	err := c.cc.Invoke(ctx, "/blogservice.BlogService/CreateBlogTag", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -105,8 +105,8 @@ func (c *blogServiceClient) ListBlogTag(ctx context.Context, in *Void, opts ...g
 	return out, nil
 }
 
-func (c *blogServiceClient) GetBlogTag(ctx context.Context, in *BlogTagId, opts ...grpc.CallOption) (*BlogTagPayload, error) {
-	out := new(BlogTagPayload)
+func (c *blogServiceClient) GetBlogTag(ctx context.Context, in *BlogTagId, opts ...grpc.CallOption) (*BlogTag, error) {
+	out := new(BlogTag)
 	err := c.cc.Invoke(ctx, "/blogservice.BlogService/GetBlogTag", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -114,8 +114,8 @@ func (c *blogServiceClient) GetBlogTag(ctx context.Context, in *BlogTagId, opts 
 	return out, nil
 }
 
-func (c *blogServiceClient) UpdateBlogTag(ctx context.Context, in *BlogTagPayload, opts ...grpc.CallOption) (*BlogTagPayload, error) {
-	out := new(BlogTagPayload)
+func (c *blogServiceClient) UpdateBlogTag(ctx context.Context, in *BlogTag, opts ...grpc.CallOption) (*BlogTag, error) {
+	out := new(BlogTag)
 	err := c.cc.Invoke(ctx, "/blogservice.BlogService/UpdateBlogTag", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -141,10 +141,10 @@ type BlogServiceServer interface {
 	GetBlog(context.Context, *BlogId) (*BlogPayload, error)
 	UpdateBlog(context.Context, *BlogPayload) (*BlogPayload, error)
 	DeleteBlog(context.Context, *BlogId) (*BlogId, error)
-	CreateBlogTag(context.Context, *BlogTagPayload) (*BlogTagPayload, error)
+	CreateBlogTag(context.Context, *BlogTag) (*BlogTag, error)
 	ListBlogTag(context.Context, *Void) (*ListBlogTagResponse, error)
-	GetBlogTag(context.Context, *BlogTagId) (*BlogTagPayload, error)
-	UpdateBlogTag(context.Context, *BlogTagPayload) (*BlogTagPayload, error)
+	GetBlogTag(context.Context, *BlogTagId) (*BlogTag, error)
+	UpdateBlogTag(context.Context, *BlogTag) (*BlogTag, error)
 	DeleteBlogTag(context.Context, *BlogTagId) (*BlogTagId, error)
 	mustEmbedUnimplementedBlogServiceServer()
 }
@@ -168,16 +168,16 @@ func (UnimplementedBlogServiceServer) UpdateBlog(context.Context, *BlogPayload) 
 func (UnimplementedBlogServiceServer) DeleteBlog(context.Context, *BlogId) (*BlogId, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteBlog not implemented")
 }
-func (UnimplementedBlogServiceServer) CreateBlogTag(context.Context, *BlogTagPayload) (*BlogTagPayload, error) {
+func (UnimplementedBlogServiceServer) CreateBlogTag(context.Context, *BlogTag) (*BlogTag, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBlogTag not implemented")
 }
 func (UnimplementedBlogServiceServer) ListBlogTag(context.Context, *Void) (*ListBlogTagResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListBlogTag not implemented")
 }
-func (UnimplementedBlogServiceServer) GetBlogTag(context.Context, *BlogTagId) (*BlogTagPayload, error) {
+func (UnimplementedBlogServiceServer) GetBlogTag(context.Context, *BlogTagId) (*BlogTag, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlogTag not implemented")
 }
-func (UnimplementedBlogServiceServer) UpdateBlogTag(context.Context, *BlogTagPayload) (*BlogTagPayload, error) {
+func (UnimplementedBlogServiceServer) UpdateBlogTag(context.Context, *BlogTag) (*BlogTag, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateBlogTag not implemented")
 }
 func (UnimplementedBlogServiceServer) DeleteBlogTag(context.Context, *BlogTagId) (*BlogTagId, error) {
@@ -287,7 +287,7 @@ func _BlogService_DeleteBlog_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _BlogService_CreateBlogTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BlogTagPayload)
+	in := new(BlogTag)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func _BlogService_CreateBlogTag_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/blogservice.BlogService/CreateBlogTag",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlogServiceServer).CreateBlogTag(ctx, req.(*BlogTagPayload))
+		return srv.(BlogServiceServer).CreateBlogTag(ctx, req.(*BlogTag))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -341,7 +341,7 @@ func _BlogService_GetBlogTag_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _BlogService_UpdateBlogTag_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BlogTagPayload)
+	in := new(BlogTag)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -353,7 +353,7 @@ func _BlogService_UpdateBlogTag_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/blogservice.BlogService/UpdateBlogTag",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BlogServiceServer).UpdateBlogTag(ctx, req.(*BlogTagPayload))
+		return srv.(BlogServiceServer).UpdateBlogTag(ctx, req.(*BlogTag))
 	}
 	return interceptor(ctx, in, info, handler)
 }

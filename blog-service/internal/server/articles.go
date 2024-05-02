@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -59,39 +58,38 @@ func (srv *Server) CreateBlog(ctx context.Context, blogPayload *blogservice.Blog
 	}, nil
 }
 
-func PublishArticle(w http.ResponseWriter, r *http.Request) {
+// func PublishArticle(w http.ResponseWriter, r *http.Request) {
 
-	articleID := chi.URLParam(r, "id")
-	if articleID == "" {
-		// h.respondWithError(w, http.StatusBadRequest, "Invalid request payload article id is missing")
-		return
-	}
+// 	articleID := chi.URLParam(r, "id")
+// 	if articleID == "" {
+// 		// h.respondWithError(w, http.StatusBadRequest, "Invalid request payload article id is missing")
+// 		return
+// 	}
 
-	var articleId pgtype.UUID
-	if err := articleId.Scan(articleID); err != nil {
-		// h.respondWithError(w, http.StatusBadRequest, "Invalid article ID")
-		return
-	}
+// 	var articleId pgtype.UUID
+// 	if err := articleId.Scan(articleID); err != nil {
+// 		// h.respondWithError(w, http.StatusBadRequest, "Invalid article ID")
+// 		return
+// 	}
 
-	// err := h.CheckUserOwnsArticle(r, articleId)
-	// if err != nil {
-	// h.respondWithError(w, http.StatusUnauthorized, err.Error())
-	// return
-	// }
+// 	// err := h.CheckUserOwnsArticle(r, articleId)
+// 	// if err != nil {
+// 	// h.respondWithError(w, http.StatusUnauthorized, err.Error())
+// 	// return
+// 	// }
 
-	err := store.BlogStore.Query.PublishArticle(r.Context(), articleId)
-	if err != nil {
-		// h.respondWithError(w, http.StatusInternalServerError, "error while publishing article")
-		return
-	}
+// 	err := store.BlogStore.Query.PublishArticle(r.Context(), articleId)
+// 	if err != nil {
+// 		// h.respondWithError(w, http.StatusInternalServerError, "error while publishing article")
+// 		return
+// 	}
 
-	// h.respondWithJSON(w, http.StatusOK, &Response{Message: "Article published successfully"})
+// 	// h.respondWithJSON(w, http.StatusOK, &Response{Message: "Article published successfully"})
 
-}
+// }
 
 func (srv *Server) ListBlog(ctx context.Context, req *blogservice.ListBlogRequest) (*blogservice.ListBlogResponse, error) {
 	pageNo := req.PageNumber
-
 	if pageNo == 0 || pageNo < 0 {
 		pageNo = 1
 	}
@@ -155,16 +153,12 @@ func GetAllArticles(w http.ResponseWriter, r *http.Request) {
 
 	articles, err := store.BlogStore.Query.GetAllArticles(r.Context(), int32(offset))
 	if err != nil {
-		// h.respondWithError(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	if len(articles) == 0 {
-		// h.respondWithJSON(w, http.StatusOK, []database.Article{})
 		return
 	}
-
-	// h.respondWithJSON(w, http.StatusOK, articles)
 }
 
 func GetAllArticlesByUser(w http.ResponseWriter, r *http.Request) {

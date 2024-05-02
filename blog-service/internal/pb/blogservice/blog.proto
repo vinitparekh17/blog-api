@@ -11,10 +11,10 @@ service BlogService {
     rpc UpdateBlog(BlogPayload) returns (BlogPayload);
     rpc DeleteBlog(BlogId) returns (BlogId);
 
-    rpc CreateBlogTag(BlogTagPayload) returns (BlogTagPayload);
+    rpc CreateBlogTag(BlogTag) returns (BlogTag);
     rpc ListBlogTag(Void) returns (ListBlogTagResponse);
-    rpc GetBlogTag(BlogTagId) returns (BlogTagPayload);
-    rpc UpdateBlogTag(BlogTagPayload) returns (BlogTagPayload);
+    rpc GetBlogTag(BlogTagId) returns (BlogTag);
+    rpc UpdateBlogTag(BlogTag) returns (BlogTag);
     rpc DeleteBlogTag(BlogTagId) returns (BlogTagId);
 }
 
@@ -51,7 +51,7 @@ message BlogResponse {
 }
 
 message BlogTag {
-    string id = 1;
+    int32 id = 1;
     string name = 2;
 }
 
@@ -60,9 +60,5 @@ message ListBlogTagResponse {
 }
 
 message BlogTagId {
-    string id = 1;
-}
-
-message BlogTagPayload {
-    BlogTag blog_tag = 1;
+    int32 id = 1;
 }
